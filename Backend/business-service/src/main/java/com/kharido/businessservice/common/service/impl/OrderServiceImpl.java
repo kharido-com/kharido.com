@@ -10,8 +10,6 @@ import com.kharido.businessservice.common.repository.UserRepository;
 import com.kharido.businessservice.customer.address.AddressRepository;
 import com.kharido.businessservice.customer.order.CustomerOrderServiceImpl;
 import com.kharido.businessservice.customer.repository.CustomerProfileRepository;
-import com.kharido.businessservice.seller.OrderService;
-import com.kharido.businessservice.seller.SellerService;
 import com.kharido.businessservice.seller.dto.response.OrderResponse;
 import com.kharido.businessservice.seller.entity.OrderItem;
 import com.kharido.businessservice.seller.entity.Seller;
@@ -43,8 +41,6 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private CustomerProfileRepository customerProfileRepository;
 
     @Autowired
     private AddressRepository addressRepository;
@@ -54,9 +50,6 @@ public class OrderServiceImpl implements OrderService {
 
         Seller seller = sellerService.getLoggedInSeller();
 
-        List<OrderItem> orderItems = orderItemRepository.findBySellerId(seller.getSellerId());
-
-        return orderItems.stream()
                 .map(item -> {
 
                     String productName = "";
