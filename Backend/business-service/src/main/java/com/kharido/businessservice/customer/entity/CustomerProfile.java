@@ -46,7 +46,7 @@ public class CustomerProfile {
     @Column(name = "lastname", length = 50)
     private String lastName;
 
-    @Column(name = "phone", length = 15)
+    @Column(name = "phone", length = 15, unique = true)
     private String phone;
 
     @Column(name = "dob")

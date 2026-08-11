@@ -27,7 +27,7 @@ CREATE TABLE customer_profiles (
     userid INT NOT NULL UNIQUE,
     firstname VARCHAR(50),
     lastname VARCHAR(50),
-    phone VARCHAR(15),
+    phone VARCHAR(15) UNIQUE,
     dob DATE,
     gender ENUM('MALE','FEMALE','OTHER'),
     FOREIGN KEY (userid) REFERENCES users(userid)

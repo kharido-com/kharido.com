@@ -48,7 +48,7 @@ export default function Profile() {
     // Data States
     const [profile, setProfile] = useState(null);
     const [orders, setOrders] = useState([]);
-    const [cartCount, setCartCount] = useState(3);
+    const [cartCount, setCartCount] = useState(0);
     const [loading, setLoading] = useState(true);
 
     // Edit Modal States
@@ -62,6 +62,7 @@ export default function Profile() {
     });
     const [saving, setSaving] = useState(false);
     const [alertMessage, setAlertMessage] = useState({ type: "", text: "" });
+    const [phoneError, setPhoneError] = useState("");
 
     useEffect(() => {
         loadAllData();
@@ -76,23 +77,19 @@ export default function Profile() {
             if (profileData) {
                 setProfile(profileData);
                 setEditForm({
-                    firstName: profileData.firstName || "Harsh",
-                    lastName: profileData.lastName || "Rajput",
-                    phone: profileData.phone || "+91 98765 43210",
-                    dob: profileData.dob || "2000-01-10",
+                    firstName: profileData.firstName || "",
+                    lastName: profileData.lastName || "",
+                    phone: profileData.phone || "",
+                    dob: profileData.dob || "",
                     gender: profileData.gender || "MALE"
                 });
             }
         } catch (err) {
             console.error("Failed to load profile:", err);
             // Fallback default user if offline/unauthenticated
-            setProfile({
-                firstName: "Harsh",
-                lastName: "Rajput",
-                email: "harshrajput@gmail.com",
-                phone: "+91 98765 43210",
-                dob: "2025-01-10",
-                gender: "MALE"
+            setAlertMessage({
+                type: "error",
+                text: "Unable to load profile."
             });
         }
 
@@ -153,22 +150,33 @@ export default function Profile() {
     }
 
     // Calculations for Stats
-    const totalOrdersCount = orders.length > 0 ? (orders[0].productName ? 12 : orders.length) : 12;
-    const totalSpentAmount = orders.length > 0 && orders[0].productName 
-        ? 24560 
-        : orders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
+    const totalOrdersCount = orders.length;
+    const totalSpentAmount = orders.reduce((sum, order) => {
+        const status = (order.orderStatus || "").toUpperCase();
+        const payment = (order.paymentStatus || "").toUpperCase();
+        if (status === "CANCELLED" || payment === "FAILED" || payment === "REFUNDED") {
+            return sum;
+        }
+        return sum + Number(order.totalAmount || 0);
+    }, 0);
 
     const formattedSpent = `₹${totalSpentAmount.toLocaleString("en-IN")}`;
 
     // Display Name
-    const firstName = profile?.firstName || "Harsh";
-    const lastName = profile?.lastName || "Rajput";
+    const firstName = profile?.firstName || "";
+    const lastName = profile?.lastName || "";
     const fullName = `${firstName} ${lastName}`.trim();
-    const email = profile?.email || "harshrajput@gmail.com";
-    const phone = profile?.phone || "+91 98765 43210";
+    const email = profile?.email || "";
+    const phone = profile?.phone || "";
 
     // Format Member Since
-    const memberSince = "10 January 2025";
+    const memberSince = profile?.createdAt
+        ? new Date(profile.createdAt).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "long",
+            year: "numeric"
+        })
+        : "-";
 
     // Status Badge Stylings
     function getStatusBadgeStyle(status) {
@@ -187,38 +195,73 @@ export default function Profile() {
 
     // Edit Profile Handlers
     function handleOpenEdit() {
+        const initialPhone = profile?.phone || "";
         setEditForm({
             firstName: profile?.firstName || "",
             lastName: profile?.lastName || "",
-            phone: profile?.phone || "",
+            phone: initialPhone,
             dob: profile?.dob || "",
             gender: profile?.gender || "MALE"
         });
+        if (initialPhone && (!/^\d+$/.test(initialPhone) || initialPhone.length !== 10)) {
+            setPhoneError("Phone number must contain exactly 10 digits");
+        } else {
+            setPhoneError("");
+        }
+        setAlertMessage({ type: "", text: "" });
         setOpenEditModal(true);
     }
 
     function handleEditChange(e) {
         const { name, value } = e.target;
         setEditForm((prev) => ({ ...prev, [name]: value }));
+
+        if (name === "phone") {
+            const cleanVal = value.trim();
+            if (!cleanVal) {
+                setPhoneError("Phone number is required");
+            } else if (!/^\d+$/.test(cleanVal)) {
+                setPhoneError("Phone number must contain only digits");
+            } else if (cleanVal.length !== 10) {
+                setPhoneError("Phone number must contain exactly 10 digits");
+            } else {
+                setPhoneError("");
+            }
+        }
     }
 
     async function handleSaveProfile() {
+        const phoneVal = (editForm.phone || "").trim();
+        if (!phoneVal) {
+            setPhoneError("Phone number is required");
+            return;
+        }
+        if (!/^\d+$/.test(phoneVal)) {
+            setPhoneError("Phone number must contain only digits");
+            return;
+        }
+        if (phoneVal.length !== 10) {
+            setPhoneError("Phone number must contain exactly 10 digits");
+            return;
+        }
+
         setSaving(true);
         setAlertMessage({ type: "", text: "" });
         try {
             const updated = await customerService.updateProfile({
                 ...profile,
-                ...editForm
+                ...editForm,
+                phone: phoneVal
             });
-            setProfile(updated || { ...profile, ...editForm });
+            const newProfile = updated || { ...profile, ...editForm, phone: phoneVal };
+            setProfile(newProfile);
+            window.dispatchEvent(new CustomEvent("customerProfileUpdated", { detail: newProfile }));
+            setPhoneError("");
             setAlertMessage({ type: "success", text: "Profile updated successfully!" });
             setTimeout(() => setOpenEditModal(false), 800);
         } catch (error) {
             console.error("Save profile error:", error);
-            // Local state fallback update if offline
-            setProfile((prev) => ({ ...prev, ...editForm }));
-            setAlertMessage({ type: "success", text: "Profile updated!" });
-            setTimeout(() => setOpenEditModal(false), 800);
+            setAlertMessage({ type: "error", text: error.message || "Failed to update profile in database" });
         } finally {
             setSaving(false);
         }
@@ -498,279 +541,279 @@ export default function Profile() {
             >
                 {/* Left Column: Recent Orders */}
                 <Card
-                        elevation={0}
+                    elevation={0}
+                    sx={{
+                        p: 3,
+                        borderRadius: "16px",
+                        border: "1px solid #E5E7EB",
+                        bgcolor: "#FFFFFF",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column"
+                    }}
+                >
+                    {/* Title Header */}
+                    <Box
                         sx={{
-                            p: 3,
-                            borderRadius: "16px",
-                            border: "1px solid #E5E7EB",
-                            bgcolor: "#FFFFFF",
-                            height: "100%",
                             display: "flex",
-                            flexDirection: "column"
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            mb: 2.5
                         }}
                     >
-                        {/* Title Header */}
+                        <Typography variant="h6" fontWeight={700} sx={{ color: "#111827" }}>
+                            Recent Orders
+                        </Typography>
+                        <Typography
+                            onClick={() => navigate("/user/orders")}
+                            sx={{
+                                color: "#00838F",
+                                fontWeight: 600,
+                                fontSize: "0.875rem",
+                                cursor: "pointer",
+                                "&:hover": { textDecoration: "underline" }
+                            }}
+                        >
+                            View All
+                        </Typography>
+                    </Box>
+
+                    {/* Recent Orders List */}
+                    <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+                        {orders.slice(0, 3).map((item, index) => {
+                            const prodTitle = item.productName || (item.items && item.items[0]?.productName) || `Order #${item.orderId}`;
+                            const prodImage = item.image || headphoneImg;
+                            const statusStyle = getStatusBadgeStyle(item.orderStatus);
+                            const orderDateStr = item.orderDate || "24 May 2025";
+                            const priceVal = item.totalAmount || 1299;
+
+                            return (
+                                <Box
+                                    key={item.orderId || index}
+                                    onClick={() => navigate("/user/orders")}
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        p: 1.5,
+                                        borderRadius: "12px",
+                                        border: "1px solid #F3F4F6",
+                                        cursor: "pointer",
+                                        transition: "background-color 0.2s ease",
+                                        "&:hover": { bgcolor: "#F9FAFB" }
+                                    }}
+                                >
+                                    {/* Product Image & Details */}
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                        <Box
+                                            component="img"
+                                            src={prodImage}
+                                            alt={prodTitle}
+                                            sx={{
+                                                width: 56,
+                                                height: 56,
+                                                borderRadius: "10px",
+                                                objectFit: "contain",
+                                                bgcolor: "#F8FAFC",
+                                                p: 0.5,
+                                                border: "1px solid #E5E7EB"
+                                            }}
+                                        />
+                                        <Box>
+                                            <Typography variant="body1" fontWeight={600} sx={{ color: "#111827", fontSize: "0.95rem" }}>
+                                                {prodTitle}
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ color: "#6B7280", fontSize: "0.825rem", mt: 0.3 }}>
+                                                Order ID: #{item.orderId}
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ color: "#9CA3AF", fontSize: "0.8rem", mt: 0.1 }}>
+                                                {orderDateStr}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+
+                                    {/* Status, Price & Chevron */}
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                        <Box sx={{ textAlign: "right" }}>
+                                            <Box
+                                                sx={{
+                                                    display: "inline-block",
+                                                    px: 1.5,
+                                                    py: 0.4,
+                                                    borderRadius: "12px",
+                                                    fontSize: "0.75rem",
+                                                    fontWeight: 600,
+                                                    bgcolor: statusStyle.bgcolor,
+                                                    color: statusStyle.color,
+                                                    mb: 0.5
+                                                }}
+                                            >
+                                                {item.orderStatus || "Delivered"}
+                                            </Box>
+                                            <Typography variant="body1" fontWeight={700} sx={{ color: "#111827", fontSize: "0.95rem" }}>
+                                                ₹{priceVal.toLocaleString("en-IN")}
+                                            </Typography>
+                                        </Box>
+                                        <ChevronRightIcon sx={{ color: "#9CA3AF" }} />
+                                    </Box>
+                                </Box>
+                            );
+                        })}
+                    </Box>
+
+                    {/* View All Orders Button */}
+                    <Button
+                        variant="outlined"
+                        fullWidth
+                        onClick={() => navigate("/user/orders")}
+                        sx={{
+                            mt: 3,
+                            py: 1.2,
+                            color: "#00838F",
+                            borderColor: "#00838F",
+                            borderRadius: "10px",
+                            fontWeight: 600,
+                            textTransform: "none",
+                            fontSize: "0.95rem",
+                            "&:hover": {
+                                borderColor: "#00695C",
+                                bgcolor: "#E6F7F5"
+                            }
+                        }}
+                    >
+                        View All Orders
+                    </Button>
+                </Card>
+
+                {/* Right Column: Account Overview */}
+                <Card
+                    elevation={0}
+                    sx={{
+                        p: 3,
+                        borderRadius: "16px",
+                        border: "1px solid #E5E7EB",
+                        bgcolor: "#FFFFFF",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column"
+                    }}
+                >
+                    <Typography variant="h6" fontWeight={700} sx={{ color: "#111827", mb: 2.5 }}>
+                        Account Overview
+                    </Typography>
+
+                    {/* Details List */}
+                    <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 2.5 }}>
+                        {/* Name */}
                         <Box
                             sx={{
                                 display: "flex",
                                 justifyContent: "space-between",
                                 alignItems: "center",
-                                mb: 2.5
+                                pb: 1.5,
+                                borderBottom: "1px solid #F3F4F6"
                             }}
                         >
-                            <Typography variant="h6" fontWeight={700} sx={{ color: "#111827" }}>
-                                Recent Orders
-                            </Typography>
-                            <Typography
-                                onClick={() => navigate("/user/orders")}
-                                sx={{
-                                    color: "#00838F",
-                                    fontWeight: 600,
-                                    fontSize: "0.875rem",
-                                    cursor: "pointer",
-                                    "&:hover": { textDecoration: "underline" }
-                                }}
-                            >
-                                View All
-                            </Typography>
+                            <Box>
+                                <Typography variant="caption" sx={{ color: "#6B7280", fontSize: "0.8rem", fontWeight: 500 }}>
+                                    Name
+                                </Typography>
+                                <Typography variant="body1" fontWeight={600} sx={{ color: "#111827", mt: 0.2 }}>
+                                    {fullName}
+                                </Typography>
+                            </Box>
+                            <PersonOutlinedIcon sx={{ color: "#9CA3AF" }} />
                         </Box>
 
-                        {/* Recent Orders List */}
-                        <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 2 }}>
-                            {orders.slice(0, 3).map((item, index) => {
-                                const prodTitle = item.productName || (item.items && item.items[0]?.productName) || `Order #${item.orderId}`;
-                                const prodImage = item.image || headphoneImg;
-                                const statusStyle = getStatusBadgeStyle(item.orderStatus);
-                                const orderDateStr = item.orderDate || "24 May 2025";
-                                const priceVal = item.totalAmount || 1299;
-
-                                return (
-                                    <Box
-                                        key={item.orderId || index}
-                                        onClick={() => navigate("/user/orders")}
-                                        sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "space-between",
-                                            p: 1.5,
-                                            borderRadius: "12px",
-                                            border: "1px solid #F3F4F6",
-                                            cursor: "pointer",
-                                            transition: "background-color 0.2s ease",
-                                            "&:hover": { bgcolor: "#F9FAFB" }
-                                        }}
-                                    >
-                                        {/* Product Image & Details */}
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                                            <Box
-                                                component="img"
-                                                src={prodImage}
-                                                alt={prodTitle}
-                                                sx={{
-                                                    width: 56,
-                                                    height: 56,
-                                                    borderRadius: "10px",
-                                                    objectFit: "contain",
-                                                    bgcolor: "#F8FAFC",
-                                                    p: 0.5,
-                                                    border: "1px solid #E5E7EB"
-                                                }}
-                                            />
-                                            <Box>
-                                                <Typography variant="body1" fontWeight={600} sx={{ color: "#111827", fontSize: "0.95rem" }}>
-                                                    {prodTitle}
-                                                </Typography>
-                                                <Typography variant="body2" sx={{ color: "#6B7280", fontSize: "0.825rem", mt: 0.3 }}>
-                                                    Order ID: #{item.orderId}
-                                                </Typography>
-                                                <Typography variant="body2" sx={{ color: "#9CA3AF", fontSize: "0.8rem", mt: 0.1 }}>
-                                                    {orderDateStr}
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-
-                                        {/* Status, Price & Chevron */}
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                                            <Box sx={{ textAlign: "right" }}>
-                                                <Box
-                                                    sx={{
-                                                        display: "inline-block",
-                                                        px: 1.5,
-                                                        py: 0.4,
-                                                        borderRadius: "12px",
-                                                        fontSize: "0.75rem",
-                                                        fontWeight: 600,
-                                                        bgcolor: statusStyle.bgcolor,
-                                                        color: statusStyle.color,
-                                                        mb: 0.5
-                                                    }}
-                                                >
-                                                    {item.orderStatus || "Delivered"}
-                                                </Box>
-                                                <Typography variant="body1" fontWeight={700} sx={{ color: "#111827", fontSize: "0.95rem" }}>
-                                                    ₹{priceVal.toLocaleString("en-IN")}
-                                                </Typography>
-                                            </Box>
-                                            <ChevronRightIcon sx={{ color: "#9CA3AF" }} />
-                                        </Box>
-                                    </Box>
-                                );
-                            })}
-                        </Box>
-
-                        {/* View All Orders Button */}
-                        <Button
-                            variant="outlined"
-                            fullWidth
-                            onClick={() => navigate("/user/orders")}
+                        {/* Email */}
+                        <Box
                             sx={{
-                                mt: 3,
-                                py: 1.2,
-                                color: "#00838F",
-                                borderColor: "#00838F",
-                                borderRadius: "10px",
-                                fontWeight: 600,
-                                textTransform: "none",
-                                fontSize: "0.95rem",
-                                "&:hover": {
-                                    borderColor: "#00695C",
-                                    bgcolor: "#E6F7F5"
-                                }
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                pb: 1.5,
+                                borderBottom: "1px solid #F3F4F6"
                             }}
                         >
-                            View All Orders
-                        </Button>
-                    </Card>
+                            <Box>
+                                <Typography variant="caption" sx={{ color: "#6B7280", fontSize: "0.8rem", fontWeight: 500 }}>
+                                    Email
+                                </Typography>
+                                <Typography variant="body1" fontWeight={600} sx={{ color: "#111827", mt: 0.2 }}>
+                                    {email}
+                                </Typography>
+                            </Box>
+                            <EmailOutlinedIcon sx={{ color: "#9CA3AF" }} />
+                        </Box>
 
-                {/* Right Column: Account Overview */}
-                <Card
-                        elevation={0}
+                        {/* Phone */}
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                pb: 1.5,
+                                borderBottom: "1px solid #F3F4F6"
+                            }}
+                        >
+                            <Box>
+                                <Typography variant="caption" sx={{ color: "#6B7280", fontSize: "0.8rem", fontWeight: 500 }}>
+                                    Phone
+                                </Typography>
+                                <Typography variant="body1" fontWeight={600} sx={{ color: "#111827", mt: 0.2 }}>
+                                    {phone}
+                                </Typography>
+                            </Box>
+                            <PhoneOutlinedIcon sx={{ color: "#9CA3AF" }} />
+                        </Box>
+
+                        {/* Member Since */}
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                pb: 1.5,
+                                borderBottom: "1px solid #F3F4F6"
+                            }}
+                        >
+                            <Box>
+                                <Typography variant="caption" sx={{ color: "#6B7280", fontSize: "0.8rem", fontWeight: 500 }}>
+                                    Member Since
+                                </Typography>
+                                <Typography variant="body1" fontWeight={600} sx={{ color: "#111827", mt: 0.2 }}>
+                                    {memberSince}
+                                </Typography>
+                            </Box>
+                            <CalendarTodayOutlinedIcon sx={{ color: "#9CA3AF" }} />
+                        </Box>
+                    </Box>
+
+                    {/* Edit Profile Button */}
+                    <Button
+                        variant="contained"
+                        fullWidth
+                        startIcon={<EditOutlinedIcon />}
+                        onClick={handleOpenEdit}
                         sx={{
-                            p: 3,
-                            borderRadius: "16px",
-                            border: "1px solid #E5E7EB",
-                            bgcolor: "#FFFFFF",
-                            height: "100%",
-                            display: "flex",
-                            flexDirection: "column"
+                            mt: 3,
+                            py: 1.2,
+                            bgcolor: "#00838F",
+                            color: "#FFFFFF",
+                            borderRadius: "10px",
+                            fontWeight: 600,
+                            textTransform: "none",
+                            fontSize: "0.95rem",
+                            boxShadow: "none",
+                            "&:hover": {
+                                bgcolor: "#00695C",
+                                boxShadow: "none"
+                            }
                         }}
                     >
-                        <Typography variant="h6" fontWeight={700} sx={{ color: "#111827", mb: 2.5 }}>
-                            Account Overview
-                        </Typography>
-
-                        {/* Details List */}
-                        <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 2.5 }}>
-                            {/* Name */}
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    pb: 1.5,
-                                    borderBottom: "1px solid #F3F4F6"
-                                }}
-                            >
-                                <Box>
-                                    <Typography variant="caption" sx={{ color: "#6B7280", fontSize: "0.8rem", fontWeight: 500 }}>
-                                        Name
-                                    </Typography>
-                                    <Typography variant="body1" fontWeight={600} sx={{ color: "#111827", mt: 0.2 }}>
-                                        {fullName}
-                                    </Typography>
-                                </Box>
-                                <PersonOutlinedIcon sx={{ color: "#9CA3AF" }} />
-                            </Box>
-
-                            {/* Email */}
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    pb: 1.5,
-                                    borderBottom: "1px solid #F3F4F6"
-                                }}
-                            >
-                                <Box>
-                                    <Typography variant="caption" sx={{ color: "#6B7280", fontSize: "0.8rem", fontWeight: 500 }}>
-                                        Email
-                                    </Typography>
-                                    <Typography variant="body1" fontWeight={600} sx={{ color: "#111827", mt: 0.2 }}>
-                                        {email}
-                                    </Typography>
-                                </Box>
-                                <EmailOutlinedIcon sx={{ color: "#9CA3AF" }} />
-                            </Box>
-
-                            {/* Phone */}
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    pb: 1.5,
-                                    borderBottom: "1px solid #F3F4F6"
-                                }}
-                            >
-                                <Box>
-                                    <Typography variant="caption" sx={{ color: "#6B7280", fontSize: "0.8rem", fontWeight: 500 }}>
-                                        Phone
-                                    </Typography>
-                                    <Typography variant="body1" fontWeight={600} sx={{ color: "#111827", mt: 0.2 }}>
-                                        {phone}
-                                    </Typography>
-                                </Box>
-                                <PhoneOutlinedIcon sx={{ color: "#9CA3AF" }} />
-                            </Box>
-
-                            {/* Member Since */}
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    pb: 1.5,
-                                    borderBottom: "1px solid #F3F4F6"
-                                }}
-                            >
-                                <Box>
-                                    <Typography variant="caption" sx={{ color: "#6B7280", fontSize: "0.8rem", fontWeight: 500 }}>
-                                        Member Since
-                                    </Typography>
-                                    <Typography variant="body1" fontWeight={600} sx={{ color: "#111827", mt: 0.2 }}>
-                                        {memberSince}
-                                    </Typography>
-                                </Box>
-                                <CalendarTodayOutlinedIcon sx={{ color: "#9CA3AF" }} />
-                            </Box>
-                        </Box>
-
-                        {/* Edit Profile Button */}
-                        <Button
-                            variant="contained"
-                            fullWidth
-                            startIcon={<EditOutlinedIcon />}
-                            onClick={handleOpenEdit}
-                            sx={{
-                                mt: 3,
-                                py: 1.2,
-                                bgcolor: "#00838F",
-                                color: "#FFFFFF",
-                                borderRadius: "10px",
-                                fontWeight: 600,
-                                textTransform: "none",
-                                fontSize: "0.95rem",
-                                boxShadow: "none",
-                                "&:hover": {
-                                    bgcolor: "#00695C",
-                                    boxShadow: "none"
-                                }
-                            }}
-                        >
-                            Edit Profile
-                        </Button>
-                    </Card>
+                        Edit Profile
+                    </Button>
+                </Card>
             </Box>
 
             {/* Footer Notice */}
@@ -798,6 +841,11 @@ export default function Profile() {
                 </DialogTitle>
 
                 <DialogContent dividers sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
+                    {alertMessage.text && (
+                        <Alert severity={alertMessage.type || "error"}>
+                            {alertMessage.text}
+                        </Alert>
+                    )}
                     <TextField
                         fullWidth
                         label="First Name"
@@ -824,6 +872,8 @@ export default function Profile() {
                         onChange={handleEditChange}
                         variant="outlined"
                         size="small"
+                        error={Boolean(phoneError)}
+                        helperText={phoneError}
                     />
                     <TextField
                         fullWidth

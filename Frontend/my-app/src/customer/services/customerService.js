@@ -1,4 +1,5 @@
-const BASE_URL = "http://localhost:8082/api/customers";
+const API_GATEWAY_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const BASE_URL = `${API_GATEWAY_URL}/api/customers`;
 
 const customerService = {
 
@@ -34,7 +35,8 @@ const customerService = {
         );
 
         if (!response.ok) {
-            throw new Error("Unable to update profile");
+            const errorData = await response.json().catch(() => null);
+            throw new Error(errorData?.message || "Unable to update profile");
         }
 
         return await response.json();

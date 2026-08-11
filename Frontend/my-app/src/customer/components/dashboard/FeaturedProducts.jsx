@@ -13,7 +13,7 @@ import ProductFilters from "../product/ProductFilters";
 import { getProducts } from "../../services/productService";
 
 export default function FeaturedProducts({ categoryId }) {
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const keyword = searchParams.get("keyword") || "";
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -59,6 +59,12 @@ export default function FeaturedProducts({ categoryId }) {
 
     function handleFilter(filterValues) {
         setFilters(filterValues);
+        const params = new URLSearchParams();
+        if (filterValues.keyword) params.set("keyword", filterValues.keyword);
+        if (filterValues.categoryId) params.set("categoryId", filterValues.categoryId);
+        if (filterValues.brandId) params.set("brandId", filterValues.brandId);
+        if (filterValues.sort) params.set("sort", filterValues.sort);
+        setSearchParams(params);
         loadProducts(filterValues);
     }
 

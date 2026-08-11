@@ -3,6 +3,7 @@ package com.kharido.businessservice.customer.dto;
 import java.time.LocalDate;
 
 import com.kharido.businessservice.common.enums.Gender;
+import java.time.LocalDateTime;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,5 +26,6 @@ public class CustomerResponseDTO {
     private String lastName;
     private String phone;
     private LocalDate dob;
+    private LocalDateTime createdAt;
     private Gender gender;
 }

@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Entity
+@Entity(name = "CustomerSubCategory")
 @Table(name = "subcategories")
 @Data
 @NoArgsConstructor

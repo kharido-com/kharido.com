@@ -1,4 +1,5 @@
-const BASE_URL = "http://localhost:8082/api/orders";
+const API_GATEWAY_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const BASE_URL = `${API_GATEWAY_URL}/api/orders`;
 
 const orderService = {
 
@@ -18,26 +19,26 @@ const orderService = {
 
     async placeOrder(addressId) {
 
-    const response = await fetch(
-        BASE_URL,
-        {
-            method: "POST",
-            credentials: "include",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                addressId
-            })
+        const response = await fetch(
+            BASE_URL,
+            {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    addressId
+                })
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Unable to place order.");
         }
-    );
 
-    if (!response.ok) {
-        throw new Error("Unable to place order.");
-    }
-
-    return await response.json();
-},
+        return await response.json();
+    },
 
     async getOrder(orderId) {
 
@@ -54,7 +55,6 @@ const orderService = {
     },
 
     async cancelOrder(orderId) {
-
         const response = await fetch(
             `${BASE_URL}/${orderId}/cancel`,
             {
@@ -64,7 +64,8 @@ const orderService = {
         );
 
         if (!response.ok) {
-            throw new Error("Unable to cancel order.");
+            const errorData = await response.json().catch(() => null);
+            throw new Error(errorData?.message || "Unable to cancel order.");
         }
 
         return await response.text();

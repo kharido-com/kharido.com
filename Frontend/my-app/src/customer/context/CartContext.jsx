@@ -58,7 +58,7 @@ export function useCart() {
     if (!context) {
         return {
             cartCount: 0,
-            refreshCart: () => {}
+            refreshCart: () => { }
         };
     }
     return context;
