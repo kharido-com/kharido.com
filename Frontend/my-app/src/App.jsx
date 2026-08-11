@@ -55,7 +55,7 @@ import AdminCustomers from './components/AdminCustomers'
 import AdminVendors from './components/AdminVendors'
 import AdminReports from './components/AdminReports'
 import AdminSettings from './components/AdminSettings'
-import AdminLayout from './components/AdminLayout'
+import AdminMenu from './components/AdminMenu'
 
 // Delivery Components
 import AssignedOrders from './components/AssignedOrders'
@@ -73,302 +73,303 @@ function App() {
       <WishlistProvider>
         <BrowserRouter>
 
-      <Routes>
+          <Routes>
 
-        {/* =====================================================
+            {/* =====================================================
             PUBLIC ROUTES
         ====================================================== */}
 
-        <Route
-          path="/"
-          element={<HomeComp />}
-        />
+            <Route
+              path="/"
+              element={<HomeComp />}
+            />
 
-        <Route
-          path="/login"
-          element={<LoginComp />}
-        />
+            <Route
+              path="/login"
+              element={<LoginComp />}
+            />
 
-        <Route
-          path="/register"
-          element={<RegisterChoice />}
-        />
+            <Route
+              path="/register"
+              element={<RegisterChoice />}
+            />
 
-        <Route
-          path="/register/user"
-          element={<CustomerRegisterComp />}
-        />
+            <Route
+              path="/register/user"
+              element={<CustomerRegisterComp />}
+            />
 
-        <Route
-          path="/register/seller"
-          element={<SellerRegisterComp />}
-        />
+            <Route
+              path="/register/seller"
+              element={<SellerRegisterComp />}
+            />
 
-        <Route
-          path="/register/admin"
-          element={<AdminRegisterComp />}
-        />
+            <Route
+              path="/register/admin"
+              element={<AdminRegisterComp />}
+            />
 
-        <Route
-          path="/terms"
-          element={<TermsConditions />}
-        />
+            <Route
+              path="/terms"
+              element={<TermsConditions />}
+            />
 
-        <Route
-          path="/privacy"
-          element={<PrivacyPolicy />}
-        />
+            <Route
+              path="/privacy"
+              element={<PrivacyPolicy />}
+            />
 
 
-        {/* =====================================================
+            {/* =====================================================
             PRODUCT ROUTES
             These are currently public
         ====================================================== */}
 
-        <Route
-          path="/products"
-          element={<ProductList />}
-        />
+            <Route
+              path="/products"
+              element={<ProductList />}
+            />
 
-        <Route
-          path="/categories"
-          element={<ProductList />}
-        />
+            <Route
+              path="/categories"
+              element={<ProductList />}
+            />
 
-        <Route
-          path="/product/:id"
-          element={<ProductDetails />}
-        />
+            <Route
+              path="/product/:id"
+              element={<ProductDetails />}
+            />
 
 
-        {/* =====================================================
+            {/* =====================================================
             CUSTOMER ROUTES
             Role: CUSTOMER
         ====================================================== */}
 
-        <Route
-          path="/user"
-          element={
-        <ProtectedRoutes role="CUSTOMER">
-            <CustomerLayout />
-        </ProtectedRoutes>
-    }
->
+            <Route
+              path="/user"
+              element={
+                <ProtectedRoutes role="CUSTOMER">
+                  <CustomerLayout />
+                </ProtectedRoutes>
+              }
+            >
 
-    <Route index element={<Dashboard />} />
+              <Route index element={<Dashboard />} />
 
-    <Route
-    path="product/:id"
-    element={<CustomerProductDetails />}
-/>
+              <Route
+                path="product/:id"
+                element={<CustomerProductDetails />}
+              />
 
-    <Route path="profile" element={<Profile />} />
+              <Route path="profile" element={<Profile />} />
 
-    <Route path="address" element={<Address />} />
+              <Route path="address" element={<Address />} />
 
-    <Route path="cart" element={<Cart />} />
+              <Route path="cart" element={<Cart />} />
 
-    <Route path="orders" element={<Orders />} />
+              <Route path="orders" element={<Orders />} />
 
-    <Route
-      path="checkout"
-      element={<Checkout />}
-    />
+              <Route
+                path="checkout"
+                element={<Checkout />}
+              />
 
-    <Route
-      path="payment/:orderId"
-      element={<Payment />}
-    />
+              <Route
+                path="payment/:orderId"
+                element={<Payment />}
+              />
 
-    <Route
-      path="wishlist"
-      element={<Wishlist />}
-    />
-    
-    <Route path="logout" element={<LogoutComp />} />
+              <Route
+                path="wishlist"
+                element={<Wishlist />}
+              />
 
-</Route>
+              <Route path="logout" element={<LogoutComp />} />
+
+            </Route>
 
 
-       {/* =====================================================
-    ADMIN ROUTES
-    Role: ADMIN
-===================================================== */}
+            {/* =====================================================
+            ADMIN ROUTES
+            Role: ADMIN
+        ====================================================== */}
 
-<Route
-  path="/admin"
-  element={
-    <ProtectedRoutes role="ADMIN">
-      <AdminLayout />
-    </ProtectedRoutes>
-  }
->
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoutes role="ADMIN">
+                  <AdminMenu />
+                </ProtectedRoutes>
+              }
+            >
 
-  {/* /admin */}
-  <Route
-    index
-    element={<AdminDashboard />}
-  />
+              {/* /admin */}
+              <Route
+                index
+                element={<AdminDashboard />}
+              />
 
-  {/* /admin/orders */}
-  <Route
-    path="orders"
-    element={<AdminOrders />}
-  />
+              {/* /admin/orders */}
+              <Route
+                path="orders"
+                element={<AdminOrders />}
+              />
 
-  {/* /admin/products */}
-  <Route
-    path="products"
-    element={<AdminProducts />}
-  />
+              {/* /admin/products */}
+              <Route
+                path="products"
+                element={<AdminProducts />}
+              />
 
-  {/* /admin/customers */}
-  <Route
-    path="customers"
-    element={<AdminCustomers />}
-  />
+              {/* /admin/customers */}
+              <Route
+                path="customers"
+                element={<AdminCustomers />}
+              />
 
-  {/* /admin/vendors */}
-  <Route
-    path="vendors"
-    element={<AdminVendors />}
-  />
+              {/* /admin/vendors */}
+              <Route
+                path="vendors"
+                element={<AdminVendors />}
+              />
 
-  {/* /admin/reports */}
-  <Route
-    path="reports"
-    element={<AdminReports />}
-  />
+              {/* /admin/reports */}
+              <Route
+                path="reports"
+                element={<AdminReports />}
+              />
 
-  {/* /admin/settings */}
-  <Route
-    path="settings"
-    element={<AdminSettings />}
-  />
+              {/* /admin/settings */}
+              <Route
+                path="settings"
+                element={<AdminSettings />}
+              />
 
-  {/* /admin/logout */}
-  <Route
-    path="logout"
-    element={<LogoutComp />}
-  />
+              {/* /admin/logout */}
+              <Route
+                path="logout"
+                element={<LogoutComp />}
+              />
 
-</Route>
+            </Route>
 
-        {/* =====================================================
+
+            {/* =====================================================
             SELLER / VENDOR ROUTES
             Role: VENDOR
         ====================================================== */}
-<Route
-  path="/seller"
-  element={
-    <ProtectedRoutes role="SELLER">
-      <SellerDashboard />
-    </ProtectedRoutes>
-  }
->
+            <Route
+              path="/seller"
+              element={
+                <ProtectedRoutes role="SELLER">
+                  <SellerDashboard />
+                </ProtectedRoutes>
+              }
+            >
 
-  {/* Default Seller Dashboard */}
-  <Route
-    index
-    element={<SellerHome />}
-  />
+              {/* Default Seller Dashboard */}
+              <Route
+                index
+                element={<SellerHome />}
+              />
 
-  {/* /seller/dashboard */}
-  <Route
-    path="dashboard"
-    element={<SellerHome />}
-  />
+              {/* /seller/dashboard */}
+              <Route
+                path="dashboard"
+                element={<SellerHome />}
+              />
 
-  {/* /seller/products */}
-  <Route
-    path="products"
-    element={<SellerProducts />}
-  />
+              {/* /seller/products */}
+              <Route
+                path="products"
+                element={<SellerProducts />}
+              />
 
-  {/* /seller/add-product */}
-  <Route
-    path="add-product"
-    element={<AddProduct />}
-  />
+              {/* /seller/add-product */}
+              <Route
+                path="add-product"
+                element={<AddProduct />}
+              />
 
-  {/* /seller/orders */}
-  <Route
-    path="orders"
-    element={<SellerOrders />}
-  />
+              {/* /seller/orders */}
+              <Route
+                path="orders"
+                element={<SellerOrders />}
+              />
 
-  {/* /seller/profile */}
-  <Route
-    path="profile"
-    element={<SellerProfile />}
-  />
+              {/* /seller/profile */}
+              <Route
+                path="profile"
+                element={<SellerProfile />}
+              />
 
-  {/* /seller/logout */}
-  <Route
-    path="logout"
-    element={<LogoutComp />}
-  />
+              {/* /seller/logout */}
+              <Route
+                path="logout"
+                element={<LogoutComp />}
+              />
 
-</Route>
+            </Route>
 
 
-        {/* =====================================================
+            {/* =====================================================
             DELIVERY ROUTES
             Role: DELIVERY
         ====================================================== */}
 
-        <Route
-          path="/delivery"
-          element={
-            <ProtectedRoutes role="DELIVERY">
-              <DeliveryDashboard />
-            </ProtectedRoutes>
-          }
-        >
+            <Route
+              path="/delivery"
+              element={
+                <ProtectedRoutes role="DELIVERY">
+                  <DeliveryDashboard />
+                </ProtectedRoutes>
+              }
+            >
 
-          {/* /delivery/assigned-orders */}
-          <Route
-            path="assigned-orders"
-            element={<AssignedOrders />}
-          />
+              {/* /delivery/assigned-orders */}
+              <Route
+                path="assigned-orders"
+                element={<AssignedOrders />}
+              />
 
-          {/* /delivery/picked-orders */}
-          <Route
-            path="picked-orders"
-            element={<PickedOrders />}
-          />
+              {/* /delivery/picked-orders */}
+              <Route
+                path="picked-orders"
+                element={<PickedOrders />}
+              />
 
-          {/* /delivery/in-transit */}
-          <Route
-            path="in-transit"
-            element={<InTransitOrders />}
-          />
+              {/* /delivery/in-transit */}
+              <Route
+                path="in-transit"
+                element={<InTransitOrders />}
+              />
 
-          {/* /delivery/delivered-orders */}
-          <Route
-            path="delivered-orders"
-            element={<DeliveredOrders />}
-          />
+              {/* /delivery/delivered-orders */}
+              <Route
+                path="delivered-orders"
+                element={<DeliveredOrders />}
+              />
 
-          {/* /delivery/logout */}
-          <Route
-            path="logout"
-            element={<LogoutComp />}
-          />
+              {/* /delivery/logout */}
+              <Route
+                path="logout"
+                element={<LogoutComp />}
+              />
 
-        </Route>
+            </Route>
 
 
-        {/* =====================================================
+            {/* =====================================================
             404 PAGE
         ====================================================== */}
 
-        <Route
-          path="*"
-          element={<h1>404 Page Not Found</h1>}
-        />
+            <Route
+              path="*"
+              element={<h1>404 Page Not Found</h1>}
+            />
 
-      </Routes>
+          </Routes>
 
         </BrowserRouter>
       </WishlistProvider>
