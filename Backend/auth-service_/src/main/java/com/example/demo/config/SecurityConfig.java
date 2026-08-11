@@ -5,71 +5,102 @@ import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import com.example.demo.security.JwtAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+        private final JwtAuthenticationFilter jwtAuthenticationFilter;
+        private final AuthenticationProvider authenticationProvider;
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+        public SecurityConfig(
+                        JwtAuthenticationFilter jwtAuthenticationFilter,
+                        AuthenticationProvider authenticationProvider) {
 
-        CorsConfiguration configuration = new CorsConfiguration();
+                this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+                this.authenticationProvider = authenticationProvider;
+        }
 
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
+        @Bean
+        CorsConfigurationSource corsConfigurationSource() {
 
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
+                CorsConfiguration configuration = new CorsConfiguration();
 
-        source.registerCorsConfiguration("/**", configuration);
+                configuration.setAllowedOrigins(
+                                List.of("http://localhost:5173"));
 
-        return source;
-    }
+                configuration.setAllowedMethods(
+                                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+                configuration.setAllowedHeaders(
+                                List.of("*"));
 
-        http
-                .cors(Customizer.withDefaults())
-                .csrf(csrf -> csrf.disable())
+                configuration.setAllowCredentials(true);
 
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
-                .authorizeHttpRequests(auth -> auth
+                source.registerCorsConfiguration("/**", configuration);
 
-                        // Allow CORS preflight requests
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                return source;
+        }
 
-                        // Public APIs
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/customers/register").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/seller/register").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/seller/login").permitAll()
-                        .requestMatchers("/seller/test").permitAll()
+        @Bean
+        SecurityFilterChain securityFilterChain(HttpSecurity http)
+                        throws Exception {
 
-                        // Everything else requires authentication
-                        .anyRequest().authenticated()
-                );
+                http
+                                .csrf(csrf -> csrf.disable())
 
-        return http.build();
-    }
+                                .cors(Customizer.withDefaults())
+
+                                .sessionManagement(session -> session.sessionCreationPolicy(
+                                                SessionCreationPolicy.STATELESS))
+
+                                .authenticationProvider(authenticationProvider)
+
+                                .addFilterBefore(
+                                                jwtAuthenticationFilter,
+                                                UsernamePasswordAuthenticationFilter.class)
+
+                                .authorizeHttpRequests(auth -> auth
+
+                                                .requestMatchers(
+                                                                HttpMethod.OPTIONS,
+                                                                "/**")
+                                                .permitAll()
+
+                                                .requestMatchers(
+                                                                "/api/auth/login")
+                                                .permitAll()
+
+                                                .requestMatchers(
+                                                                "/api/customers/register")
+                                                .permitAll()
+
+                                                .requestMatchers(
+                                                                "/seller/login")
+                                                .permitAll()
+
+                                                .requestMatchers(
+                                                                "/seller/register")
+                                                .permitAll()
+
+                                                .anyRequest()
+                                                .authenticated());
+
+                return http.build();
+        }
+
 }

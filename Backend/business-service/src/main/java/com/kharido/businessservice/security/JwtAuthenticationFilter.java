@@ -2,18 +2,18 @@ package com.kharido.businessservice.security;
 
 import java.io.IOException;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -41,57 +41,72 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         Cookie[] cookies = request.getCookies();
 
-        if (cookies != null) {
+        System.out.println("========== JWT FILTER ==========");
+
+        if (cookies == null) {
+            System.out.println("No Cookies");
+        } else {
 
             for (Cookie cookie : cookies) {
 
-                if ("jwt".equals(cookie.getName())) {
+                System.out.println(cookie.getName() + " = " + cookie.getValue());
 
+                if ("jwt".equals(cookie.getName())) {
                     token = cookie.getValue();
-                    break;
                 }
             }
         }
 
-        if (token != null && jwtService.isTokenValid(token)) {
+        if (token == null) {
+            System.out.println("JWT NOT FOUND");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        System.out.println("Token Received");
+
+        try {
+
+            boolean valid = jwtService.isTokenValid(token);
+
+            System.out.println("Token Valid = " + valid);
+
+            if (!valid) {
+                filterChain.doFilter(request, response);
+                return;
+            }
 
             username = jwtService.extractUsername(token);
 
-            if (username != null &&
-                    SecurityContextHolder.getContext().getAuthentication() == null) {
+            System.out.println("Username = " + username);
 
-                UserDetails userDetails =
-                        userDetailsService.loadUserByUsername(username);
+            UserDetails userDetails =
+                    userDetailsService.loadUserByUsername(username);
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities());
+            System.out.println("Loaded User = " + userDetails.getUsername());
+            System.out.println("Authorities = " + userDetails.getAuthorities());
 
-                authentication.setDetails(
-                        new WebAuthenticationDetailsSource()
-                                .buildDetails(request));
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities());
 
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authentication);
-            }
-        }
-        
-        System.out.println("===== JWT FILTER =====");
+            authentication.setDetails(
+                    new WebAuthenticationDetailsSource()
+                            .buildDetails(request));
 
-        if (cookies == null) {
-            System.out.println("No cookies received.");
-        } else {
-            for (Cookie cookie : cookies) {
-                System.out.println(cookie.getName() + " = " + cookie.getValue());
-            }
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            System.out.println("Authentication = "
+                    + SecurityContextHolder.getContext().getAuthentication());
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
         }
 
-        System.out.println("Token = " + token);
-        System.out.println("Username = " + username);
-        System.out.println("Authentication = "
-                + SecurityContextHolder.getContext().getAuthentication());
+        System.out.println("================================");
 
         filterChain.doFilter(request, response);
     }

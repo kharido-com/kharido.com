@@ -2,13 +2,13 @@ package com.kharido.businessservice.customer.controller;
 
 import java.util.List;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -30,14 +30,19 @@ public class CustomerController {
     }
 
     @GetMapping("/profile")
-    public CustomerResponseDTO getCustomerProfile(@RequestParam String username) {
+    public CustomerResponseDTO getCustomerProfile(Authentication authentication) {
+
+        String username = authentication.getName();
+
         return customerService.getCustomerProfile(username);
     }
 
     @PutMapping("/profile")
     public CustomerResponseDTO updateCustomerProfile(
-            @RequestParam String username,
+            Authentication authentication,
             @Valid @RequestBody UpdateCustomerRequest request) {
+
+        String username = authentication.getName();
 
         return customerService.updateCustomerProfile(username, request);
     }

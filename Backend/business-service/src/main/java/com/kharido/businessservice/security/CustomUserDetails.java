@@ -8,6 +8,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.kharido.businessservice.common.entity.User;
+import com.kharido.businessservice.common.enums.AccountStatus;
 
 public class CustomUserDetails implements UserDetails {
 
@@ -23,10 +24,9 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-
         return List.of(
                 new SimpleGrantedAuthority(
-                        "ROLE_" + user.getRole().getRoleName()));
+                        "ROLE_" + user.getRole().getRoleName().toUpperCase()));
     }
 
     @Override
@@ -56,6 +56,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return user.getStatus().name().equals("ACTIVE");
+        return user.getStatus() == AccountStatus.ACTIVE;
     }
 }

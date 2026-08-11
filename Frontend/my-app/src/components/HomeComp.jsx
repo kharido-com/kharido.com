@@ -5,7 +5,7 @@ import Deals from "../components/Deals";
 import Products from "../components/Products";
 import Footer from "../components/Footer";
 
-function HomeComp() {
+export default function HomeComp() {
   return (
     <>
       <Navbar />
@@ -14,9 +14,6 @@ function HomeComp() {
       <Deals />
       <Products />
       <Footer />
-      
     </>
   );
 }
-
-export default HomeComp;

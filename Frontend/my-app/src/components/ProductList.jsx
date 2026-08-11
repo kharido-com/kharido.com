@@ -1,50 +1,18 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Box } from "@mui/material";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
+import FeaturedProducts from "../customer/components/dashboard/FeaturedProducts";
 
 export default function ProductList() {
+  return (
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", bgcolor: "#F5F7FA", width: "100%" }}>
+      <Navbar />
 
-    const [products, setProducts] = useState([]);
+      <Box sx={{ width: "100%", px: { xs: 2, md: 4 }, py: 4, flex: 1, boxSizing: "border-box" }}>
+        <FeaturedProducts />
+      </Box>
 
-    useEffect(() => {
-
-        fetch("http://localhost:3000/products")
-            .then(resp => resp.json())
-            .then(data => setProducts(data));
-
-    }, []);
-
-    return (
-        <>
-            <h1>Products</h1>
-
-            {
-                products.map(p =>
-
-                    <div
-                        key={p.productid}
-                        style={{
-                            border: "1px solid gray",
-                            padding: "15px",
-                            margin: "10px"
-                        }}
-                    >
-                        <Link to={`/product/${p.productid}`}>
-                            <h3>{p.product_name}</h3>
-                        </Link>
-
-                        <p>{p.description}</p>
-
-                        <p>Brand : {p.brand_name}</p>
-
-                        <p>Category : {p.category_name}</p>
-
-                        <p>Price : ₹{p.price}</p>
-
-                    </div>
-
-                )
-            }
-
-        </>
-    );
+      <Footer />
+    </Box>
+  );
 }

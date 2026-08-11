@@ -2,7 +2,19 @@ package com.example.demo.security;
 
 import java.io.IOException;
 
-<<<<<<< HEAD:Backend/auth-service/src/main/java/com/example/demo/security/JwtAuthenticationFilter.java
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.example.demo.repository.UserRepository;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,9 +30,14 @@ import jakarta.servlet.http.HttpServletResponse;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final CustomUserDetailsService userDetailsService;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(
+            JwtService jwtService,
+            CustomUserDetailsService userDetailsService) {
+
         this.jwtService = jwtService;
+        this.userDetailsService = userDetailsService;
     }
 
     @Override
@@ -30,56 +47,55 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
-        // Get Authorization header
-        String authHeader =
-                request.getHeader("Authorization");
+        String token = extractTokenFromCookie(request);
 
-        // If no Authorization header or not Bearer token
-        if (authHeader == null ||
-            !authHeader.startsWith("Bearer ")) {
-
+        if (!StringUtils.hasText(token)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Remove "Bearer " from token
-        String token =
-                authHeader.substring(7);
+        String username = jwtService.extractUsername(token);
 
-        // Validate JWT
-        if (jwtService.isTokenValid(token)) {
+        if (username != null &&
+                SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            // Get username and role
-            String username =
-                    jwtService.extractUsername(token);
+            UserDetails userDetails =
+                    userDetailsService.loadUserByUsername(username);
 
-            String role =
-                    jwtService.extractRole(token);
+            if (jwtService.isTokenValid(token, userDetails)) {
 
-            // Add ROLE_ prefix
-            SimpleGrantedAuthority authority =
-                    new SimpleGrantedAuthority(
-                            "ROLE_" + role
-                    );
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities());
 
-            // Create authentication
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            username,
-                            null,
-                            java.util.List.of(authority)
-                    );
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request));
 
-            // Set authentication
-            SecurityContextHolder
-                    .getContext()
-                    .setAuthentication(authentication);
+                SecurityContextHolder
+                        .getContext()
+                        .setAuthentication(authentication);
+            }
         }
 
-        // Continue filter chain
         filterChain.doFilter(request, response);
     }
+
+    private String extractTokenFromCookie(HttpServletRequest request) {
+
+        if (request.getCookies() == null) {
+            return null;
+        }
+
+        for (Cookie cookie : request.getCookies()) {
+
+            if ("jwt".equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+
+        return null;
+    }
 }
-=======
-}
->>>>>>> origin/master:Backend/auth-service_/src/main/java/com/example/demo/security/JwtAuthenticationFilter.java

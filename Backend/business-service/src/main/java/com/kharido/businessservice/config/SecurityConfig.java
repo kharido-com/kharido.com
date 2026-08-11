@@ -40,7 +40,7 @@ public class SecurityConfig {
                 List.of("http://localhost:5173"));
 
         configuration.setAllowedMethods(
-                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
         configuration.setAllowedHeaders(List.of("*"));
 
@@ -116,7 +116,12 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/delivery/**")
                         .hasRole("DELIVERY")
-
+                        
+                        .requestMatchers(
+                                "/api/orders/**"
+                        ).permitAll()
+                        
+                        
                         .anyRequest()
                         .authenticated());
 

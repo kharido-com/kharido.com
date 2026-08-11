@@ -27,7 +27,7 @@ CREATE TABLE customer_profiles (
     userid INT NOT NULL UNIQUE,
     firstname VARCHAR(50),
     lastname VARCHAR(50),
-    phone VARCHAR(15),
+    phone VARCHAR(15) UNIQUE,
     dob DATE,
     gender ENUM('MALE','FEMALE','OTHER'),
     FOREIGN KEY (userid) REFERENCES users(userid)
@@ -49,6 +49,7 @@ CREATE TABLE seller_profiles (
 CREATE TABLE addresses (
     addressid INT PRIMARY KEY AUTO_INCREMENT,
     userid INT NOT NULL,
+    address_name VARCHAR(50) NOT NULL DEFAULT 'Home',
     street VARCHAR(255),
     city VARCHAR(100),
     state VARCHAR(100),
@@ -117,6 +118,7 @@ CREATE TABLE cart_items (
     productid INT NOT NULL,
     quantity INT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
+    price_at_added DECIMAL(10,2) NOT NULL,
 
     FOREIGN KEY (cartid) REFERENCES carts(cartid),
     FOREIGN KEY (productid) REFERENCES products(productid)
@@ -347,3 +349,21 @@ CREATE TABLE delivery_assignments(
     REFERENCES delivery_partners(deliveryid)
 );
 
+
+ALTER TABLE payments
+ADD COLUMN user_id INT NOT NULL AFTER order_id;
+
+ALTER TABLE payments
+ADD COLUMN remarks VARCHAR(255) NULL AFTER status;
+
+ALTER TABLE orders
+MODIFY COLUMN order_status
+ENUM(
+'PENDING_PAYMENT',
+'PLACED',
+'PROCESSING',
+'SHIPPED',
+'DELIVERED',
+'CANCELLED'
+)
+NOT NULL;

@@ -3,7 +3,7 @@ package com.kharido.businessservice.common.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Entity
+@Entity(name = "CommonRole")
 @Table(name = "roles")
 @Getter
 @Setter
