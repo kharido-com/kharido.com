@@ -13,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
+@Entity(name = "AdminOrder")
 @Table(name = "orders")
 public class Order {
 

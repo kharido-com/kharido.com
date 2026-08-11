@@ -38,7 +38,7 @@ export default function LoginComp() {
 
     try {
       const response = await fetch(
-        "http://localhost:8081/api/auth/login",
+        `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}/api/auth/login`,
         {
           method: "POST",
           credentials: "include", // Cookie sent & received
@@ -52,13 +52,13 @@ export default function LoginComp() {
         }
       );
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       console.log("Spring Boot Response:", data);
 
       // Login Failed
-      if (data.message !== "Login successful") {
-        setMsg(data.message || "Invalid username or password");
+      if (!response.ok || data.message !== "Login successful") {
+        setMsg(data.message || data.error || "Invalid username or password.");
         return;
       }
 
@@ -104,10 +104,7 @@ export default function LoginComp() {
       }
     } catch (error) {
       console.error("Login Error:", error);
-
-      setMsg(
-        "Unable to connect to Spring Boot Backend. Make sure Spring Boot is running on port 8081."
-      );
+      setMsg("Invalid username or password.");
     }
   };
 

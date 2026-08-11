@@ -1,5 +1,7 @@
 package com.kharido.businessservice.admin.service.impl;
 
+import java.math.BigDecimal;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -37,22 +39,28 @@ public class AdminDashboardServiceImpl implements AdminService {
     @Override
     public DashboardResponse getDashboard() {
 
+        BigDecimal totalRevenue = orderRepository.getTotalPaidRevenue();
         return new DashboardResponse(
                 userRepository.count(),
                 sellerRepository.count(),
                 productRepository.count(),
                 orderRepository.count()
+                orderRepository.count(),
+                totalRevenue != null ? totalRevenue : BigDecimal.ZERO
         );
     }
 
     @Override
     public ReportResponse getReports() {
 
+        BigDecimal totalRevenue = orderRepository.getTotalPaidRevenue();
         return new ReportResponse(
                 userRepository.count(),
                 sellerRepository.count(),
                 productRepository.count(),
                 orderRepository.count()
+                orderRepository.count(),
+                totalRevenue != null ? totalRevenue : BigDecimal.ZERO
         );
     }
 

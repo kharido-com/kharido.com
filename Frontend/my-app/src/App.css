@@ -1,3 +1,613 @@
+/* ===========================
+      ADMIN MAIN LAYOUT
+=========================== */
+
+.admin-container {
+    display: flex;
+    min-height: 100vh;
+    background: #f4f6f9;
+}
+
+
+/* ===========================
+          SIDEBAR
+=========================== */
+
+
+.sidebar {
+
+    width: 250px;
+    background: #111827;
+    color: white;
+
+    padding: 25px 15px;
+
+    display:flex;
+    flex-direction:column;
+
+}
+
+
+.sidebar h2 {
+
+    text-align:center;
+    font-size:26px;
+    margin-bottom:30px;
+
+}
+
+
+
+.sidebar a {
+
+    color:#d1d5db;
+
+    text-decoration:none;
+
+    padding:14px 18px;
+
+    margin:5px 0;
+
+    border-radius:8px;
+
+    transition:0.3s;
+
+}
+
+
+
+.sidebar a:hover,
+.sidebar a.active {
+
+    background:#2563eb;
+
+    color:white;
+
+}
+
+
+
+/* ===========================
+        CONTENT AREA
+=========================== */
+
+
+.admin-content {
+
+    flex:1;
+
+    padding:30px;
+
+}
+
+
+
+
+.admin-page h1 {
+
+    font-size:32px;
+
+    margin-bottom:20px;
+
+    color:#111827;
+
+}
+
+
+
+
+/* ===========================
+       DASHBOARD CARDS
+=========================== */
+
+
+.dashboard-cards {
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(4,1fr);
+
+    gap:25px;
+
+}
+
+
+
+.dashboard-card {
+
+
+    background:white;
+
+    padding:25px;
+
+    border-radius:15px;
+
+    box-shadow:
+    0 5px 20px rgba(0,0,0,0.08);
+
+    transition:.3s;
+
+}
+
+
+
+.dashboard-card:hover {
+
+    transform:translateY(-5px);
+
+}
+
+
+
+.dashboard-card h2 {
+
+    font-size:35px;
+
+    color:#2563eb;
+
+}
+
+
+
+.dashboard-card p {
+
+    color:#6b7280;
+
+}
+
+
+
+/* ===========================
+        COMMON BOX
+=========================== */
+
+
+.orders-box,
+.product-admin-box,
+.customer-box,
+.activity-box,
+.settings-card,
+.report-card {
+
+
+    background:white;
+
+    padding:25px;
+
+    border-radius:15px;
+
+
+    box-shadow:
+    0 5px 20px rgba(0,0,0,.08);
+
+
+    margin-bottom:25px;
+
+
+}
+
+
+
+
+/* ===========================
+          TABLE
+=========================== */
+
+
+.admin-table {
+
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    background:white;
+
+    border-radius:12px;
+
+    overflow:hidden;
+
+
+}
+
+
+
+.admin-table th {
+
+
+    background:#2563eb;
+
+    color:white;
+
+    padding:15px;
+
+    text-align:left;
+
+
+}
+
+
+
+.admin-table td {
+
+
+    padding:15px;
+
+    border-bottom:
+    1px solid #e5e7eb;
+
+
+}
+
+
+
+.admin-table tr:hover {
+
+
+    background:#f9fafb;
+
+
+}
+
+
+
+/* ===========================
+        STATUS BADGES
+=========================== */
+
+
+.status {
+
+
+    padding:6px 12px;
+
+    border-radius:20px;
+
+    font-size:13px;
+
+    font-weight:600;
+
+
+}
+
+
+.status.completed {
+
+
+    background:#dcfce7;
+
+    color:#166534;
+
+
+}
+
+
+
+.status.pending {
+
+
+    background:#fef3c7;
+
+    color:#92400e;
+
+
+}
+
+
+
+.status.failed {
+
+
+    background:#fee2e2;
+
+    color:#991b1b;
+
+}
+
+
+
+
+/* ===========================
+           BUTTONS
+=========================== */
+
+
+button {
+
+
+    border:none;
+
+    padding:8px 15px;
+
+    border-radius:6px;
+
+    cursor:pointer;
+
+    font-weight:500;
+
+    transition:.3s;
+
+
+}
+
+
+
+button:hover {
+
+
+    opacity:.85;
+
+    transform:translateY(-1px);
+
+}
+
+
+
+.add-btn {
+
+    background:#16a34a;
+
+    color:white;
+
+}
+
+
+
+.edit-btn {
+
+    background:#2563eb;
+
+    color:white;
+
+}
+
+
+
+.delete-btn {
+
+    background:#dc2626;
+
+    color:white;
+
+}
+
+
+
+.view-btn {
+
+    background:#0891b2;
+
+    color:white;
+
+}
+
+
+
+
+/* ===========================
+          REPORT PAGE
+=========================== */
+
+
+.report-container {
+
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(2,1fr);
+
+    gap:25px;
+
+
+}
+
+
+
+.report-card h2 {
+
+
+    color:#2563eb;
+
+    font-size:32px;
+
+}
+
+
+
+/* ===========================
+        PROFILE SETTINGS
+=========================== */
+
+
+.settings-container {
+
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(2,1fr);
+
+    gap:25px;
+
+
+}
+
+
+
+.settings-card input {
+
+
+    width:100%;
+
+    padding:12px;
+
+    border:
+
+    1px solid #ddd;
+
+    border-radius:8px;
+
+    margin-bottom:15px;
+
+
+}
+
+
+
+
+/* ===========================
+        ADMIN PROFILE TABLE
+=========================== */
+
+
+.admin-profile {
+
+
+    background:white;
+
+    padding:30px;
+
+    border-radius:15px;
+
+    box-shadow:
+    0 5px 20px rgba(0,0,0,.08);
+
+
+}
+
+
+
+
+/* ===========================
+        SEARCH BAR
+=========================== */
+
+
+.admin-search {
+
+
+    width:300px;
+
+    padding:12px;
+
+    border-radius:8px;
+
+    border:1px solid #ddd;
+
+    margin-bottom:20px;
+
+
+}
+
+
+
+
+
+/* ===========================
+        ALERT
+=========================== */
+
+
+.alert {
+
+
+    padding:15px;
+
+    border-radius:8px;
+
+    margin-bottom:20px;
+
+
+}
+
+
+.alert-danger {
+
+
+    background:#fee2e2;
+
+    color:#991b1b;
+
+
+}
+
+
+
+/* ===========================
+        MOBILE
+=========================== */
+
+
+@media(max-width:1000px){
+
+
+.dashboard-cards{
+
+grid-template-columns:
+repeat(2,1fr);
+
+}
+
+
+
+}
+
+
+
+@media(max-width:700px){
+
+
+.admin-container{
+
+display:block;
+
+}
+
+
+
+.sidebar{
+
+width:100%;
+
+}
+
+
+
+.dashboard-cards,
+.report-container,
+.settings-container{
+
+
+grid-template-columns:1fr;
+
+
+}
+
+
+
+.admin-content{
+
+padding:15px;
+
+}
+
+
+
+.admin-table{
+
+
+display:block;
+
+overflow-x:auto;
+
+
+}
+
+
+}
+
 .counter {
   font-size: 16px;
   padding: 5px 10px;

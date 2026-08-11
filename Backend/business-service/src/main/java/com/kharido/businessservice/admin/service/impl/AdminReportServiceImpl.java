@@ -1,5 +1,7 @@
 package com.kharido.businessservice.admin.service.impl;
 
+import java.math.BigDecimal;
+
 import org.springframework.stereotype.Service;
 
 import com.kharido.businessservice.admin.dto.ReportResponse;
@@ -32,11 +34,15 @@ public class AdminReportServiceImpl implements AdminReportService {
     @Override
     public ReportResponse getReports() {
 
+        BigDecimal totalRevenue = orderRepository.getTotalPaidRevenue();
         return new ReportResponse(
                 userRepository.count(),
                 sellerRepository.count(),
                 productRepository.count(),
                 orderRepository.count()
+=======
+                orderRepository.count(),
+                totalRevenue != null ? totalRevenue : BigDecimal.ZERO
         );
     }
 }

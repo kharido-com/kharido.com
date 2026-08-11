@@ -3,6 +3,7 @@ package com.kharido.businessservice.admin.entity;
 import jakarta.persistence.*;
 
 @Entity
+@Entity(name = "AdminRole")
 @Table(name = "roles")
 public class Role {
 
