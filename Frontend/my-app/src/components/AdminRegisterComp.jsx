@@ -19,7 +19,7 @@ function AdminRegisterComp() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    ffetch("http://localhost:8081/api/auth/register/admin", {
+    fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}/api/auth/register/admin`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

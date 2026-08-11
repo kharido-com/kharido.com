@@ -18,6 +18,22 @@ function AdminSidebar() {
             <ul>
 
 
+import logo from "../assets/logo.png";
+
+function AdminSidebar() {
+    return (
+        <div className="admin-sidebar">
+            <div style={{ padding: "16px", textAlign: "center" }}>
+                <NavLink to="/admin">
+                    <img
+                        src={logo}
+                        alt="Kharido Logo"
+                        style={{ height: "44px", objectFit: "contain" }}
+                    />
+                </NavLink>
+            </div>
+
+            <ul>
                 <li>
                     <NavLink to="/admin">
                         Dashboard
@@ -90,5 +106,10 @@ function AdminSidebar() {
 
 }
 
+
+            </ul>
+        </div>
+    );
+}
 
 export default AdminSidebar;

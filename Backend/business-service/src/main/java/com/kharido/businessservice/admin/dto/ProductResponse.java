@@ -25,12 +25,50 @@ public class ProductResponse {
 
     private Integer stockQuantity;
 
+    private Long ordersCount;
+
     private String approvalStatus;
 
     private String status;
 
     private LocalDateTime createdAt;
 
+
+    public ProductResponse() {
+    }
+
+
+    public ProductResponse(
+            Integer productId,
+            Integer sellerId,
+            String sellerName,
+            Integer categoryId,
+            Integer subCategoryId,
+            Integer brandId,
+            String productName,
+            String description,
+            BigDecimal price,
+            Integer stockQuantity,
+            Long ordersCount,
+            String approvalStatus,
+            String status,
+            LocalDateTime createdAt) {
+
+        this.productId = productId;
+        this.sellerId = sellerId;
+        this.sellerName = sellerName;
+        this.categoryId = categoryId;
+        this.subCategoryId = subCategoryId;
+        this.brandId = brandId;
+        this.productName = productName;
+        this.description = description;
+        this.price = price;
+        this.stockQuantity = stockQuantity;
+        this.ordersCount = ordersCount != null ? ordersCount : 0L;
+        this.approvalStatus = approvalStatus;
+        this.status = status;
+        this.createdAt = createdAt;
+    }
 
     public ProductResponse(
             Integer productId,
@@ -61,6 +99,8 @@ public class ProductResponse {
         this.approvalStatus = approvalStatus;
         this.status = status;
         this.createdAt = createdAt;
+        this(productId, sellerId, sellerName, categoryId, subCategoryId, brandId,
+             productName, description, price, stockQuantity, 0L, approvalStatus, status, createdAt);
     }
 
 
@@ -102,6 +142,10 @@ public class ProductResponse {
 
     public Integer getStockQuantity() {
         return stockQuantity;
+    }
+
+    public Long getOrdersCount() {
+        return ordersCount;
     }
 
     public String getApprovalStatus() {

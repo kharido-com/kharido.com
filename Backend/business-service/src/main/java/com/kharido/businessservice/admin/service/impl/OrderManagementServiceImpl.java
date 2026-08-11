@@ -37,6 +37,7 @@ public class OrderManagementServiceImpl
 
 
         return orderRepository.findAll()
+        return orderRepository.findAllByOrderByOrderDateDescOrderIdDesc()
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -54,6 +55,11 @@ public class OrderManagementServiceImpl
 
         return orderRepository
                 .findByOrderStatus("PLACED")
+    @Override
+    public List<OrderResponse> getPendingOrders() {
+
+        return orderRepository
+                .findByOrderStatusOrderByOrderDateDescOrderIdDesc("PLACED")
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());

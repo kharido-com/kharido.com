@@ -1,11 +1,15 @@
 package com.kharido.businessservice.admin.dto;
 
+import java.math.BigDecimal;
+
 public class ReportResponse {
 
     private Long totalUsers;
     private Long totalSellers;
     private Long totalProducts;
     private Long totalOrders;
+=======
+    private BigDecimal totalRevenue;
 
     public ReportResponse() {
     }
@@ -15,11 +19,14 @@ public class ReportResponse {
             Long totalSellers,
             Long totalProducts,
             Long totalOrders) {
+            Long totalOrders,
+            BigDecimal totalRevenue) {
 
         this.totalUsers = totalUsers;
         this.totalSellers = totalSellers;
         this.totalProducts = totalProducts;
         this.totalOrders = totalOrders;
+        this.totalRevenue = totalRevenue;
     }
 
     public Long getTotalUsers() {
@@ -36,5 +43,9 @@ public class ReportResponse {
 
     public Long getTotalOrders() {
         return totalOrders;
+    }
+
+    public BigDecimal getTotalRevenue() {
+        return totalRevenue;
     }
 }

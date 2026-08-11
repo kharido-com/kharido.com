@@ -2,6 +2,9 @@ package com.kharido.businessservice.admin.service.impl;
 
 
 import java.util.List;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
@@ -18,6 +21,8 @@ public class ProductManagementServiceImpl
 
     private final ProductRepository productRepository;
 
+
+    private final ProductRepository productRepository;
 
     public ProductManagementServiceImpl(
             ProductRepository productRepository) {
@@ -48,6 +53,44 @@ public class ProductManagementServiceImpl
     }
 
 
+    @Override
+    public List<ProductResponse> getAllProducts() {
+        Map<Integer, Long> orderCountMap = getOrderCountMap();
+
+        return productRepository.findAll()
+                .stream()
+                .map(p -> convertToResponse(p, orderCountMap.getOrDefault(p.getProductId(), 0L)))
+                .toList();
+    }
+
+    @Override
+    public List<ProductResponse> getPendingProducts() {
+        Map<Integer, Long> orderCountMap = getOrderCountMap();
+
+        return productRepository.findByApprovalStatus("PENDING")
+                .stream()
+                .map(p -> convertToResponse(p, orderCountMap.getOrDefault(p.getProductId(), 0L)))
+                .toList();
+    }
+
+    private Map<Integer, Long> getOrderCountMap() {
+        Map<Integer, Long> orderCountMap = new HashMap<>();
+        try {
+            List<Object[]> rows = productRepository.getProductOrdersAggregates();
+            if (rows != null) {
+                for (Object[] row : rows) {
+                    if (row != null && row.length >= 2 && row[0] != null && row[1] != null) {
+                        Integer pId = ((Number) row[0]).intValue();
+                        Long qty = ((Number) row[1]).longValue();
+                        orderCountMap.put(pId, qty);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Fallback gracefully
+        }
+        return orderCountMap;
+    }
 
     @Override
     public String approveProduct(Integer productId) {
@@ -68,6 +111,9 @@ public class ProductManagementServiceImpl
 
 
 
+        return "Product approved successfully";
+    }
+
     @Override
     public String rejectProduct(Integer productId) {
 
@@ -87,6 +133,8 @@ public class ProductManagementServiceImpl
 
 
 
+    }
+
     @Override
     public String deleteProduct(Integer productId) {
 
@@ -98,6 +146,10 @@ public class ProductManagementServiceImpl
 
 
     private ProductResponse convertToResponse(Product product) {
+    private ProductResponse convertToResponse(Product product, Long ordersCount) {
+        if (ordersCount == null) {
+            ordersCount = 0L;
+        }
 
         return new ProductResponse(
                 product.getProductId(),
@@ -107,6 +159,11 @@ public class ProductManagementServiceImpl
                 product.getSeller()
                        .getUser()
                        .getUsername(),
+                product.getSeller() != null ? product.getSeller().getSellerId() : null,
+
+                product.getSeller() != null && product.getSeller().getUser() != null
+                        ? product.getSeller().getUser().getUsername()
+                        : "Vendor",
 
                 product.getCategoryId(),
 
@@ -121,6 +178,8 @@ public class ProductManagementServiceImpl
                 product.getPrice(),
 
                 product.getStockQuantity(),
+
+                ordersCount,
 
                 product.getApprovalStatus(),
 

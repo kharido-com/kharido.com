@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*;
 
 @Entity
+@Entity(name = "AdminProduct")
 @Table(name = "products")
 public class Product {
 
