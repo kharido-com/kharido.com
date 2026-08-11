@@ -41,7 +41,9 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public CustomerResponseDTO updateCustomerProfile(String username, UpdateCustomerRequest request) {
+    public CustomerResponseDTO updateCustomerProfile(
+            String username,
+            UpdateCustomerRequest request) {
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -49,13 +51,30 @@ public class CustomerServiceImpl implements CustomerService {
         CustomerProfile customer = customerProfileRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Customer profile not found"));
 
+        // Validate phone number
+        if (request.getPhone() == null ||
+                !request.getPhone().matches("^[0-9]{10}$")) {
+
+            throw new IllegalArgumentException(
+                    "Phone number must contain exactly 10 digits");
+        }
+
+        // Check duplicate phone
+        if (customerProfileRepository.existsByPhoneAndCustomerIdNot(
+                request.getPhone(), customer.getCustomerId())) {
+
+            throw new IllegalArgumentException(
+                    "Mobile number is already registered.");
+        }
+
         customer.setFirstName(request.getFirstName());
         customer.setLastName(request.getLastName());
         customer.setPhone(request.getPhone());
         customer.setDob(request.getDob());
         customer.setGender(request.getGender());
 
-        CustomerProfile updatedCustomer = customerProfileRepository.save(customer);
+        CustomerProfile updatedCustomer =
+                customerProfileRepository.save(customer);
 
         return mapToResponse(user, updatedCustomer);
     }
@@ -83,6 +102,7 @@ public class CustomerServiceImpl implements CustomerService {
         response.setPhone(customer.getPhone());
         response.setDob(customer.getDob());
         response.setGender(customer.getGender());
+        response.setCreatedAt(user.getCreatedAt());
 
         return response;
     }

@@ -1,4 +1,5 @@
-const BASE_URL = "http://localhost:8083/api/payments";
+const API_GATEWAY_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const BASE_URL = `${API_GATEWAY_URL}/api/payments`;
 
 const paymentService = {
 
@@ -8,6 +9,7 @@ const paymentService = {
             `${BASE_URL}/pay`,
             {
                 method: "POST",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json"
                 },
@@ -25,7 +27,10 @@ const paymentService = {
     async getPaymentsByUser(userId) {
 
         const response = await fetch(
-            `${BASE_URL}/user/${userId}`
+            `${BASE_URL}/user/${userId}`,
+            {
+                credentials: "include"
+            }
         );
 
         if (!response.ok) {
@@ -38,7 +43,10 @@ const paymentService = {
     async getPaymentsByOrder(orderId) {
 
         const response = await fetch(
-            `${BASE_URL}/order/${orderId}`
+            `${BASE_URL}/order/${orderId}`,
+            {
+                credentials: "include"
+            }
         );
 
         if (!response.ok) {

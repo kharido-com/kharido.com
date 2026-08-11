@@ -1,4 +1,5 @@
-const BASE_URL = "http://localhost:8082/api/addresses";
+const API_GATEWAY_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const BASE_URL = `${API_GATEWAY_URL}/api/addresses`;
 
 const addressService = {
 

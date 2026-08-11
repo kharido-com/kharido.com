@@ -17,6 +17,21 @@ import {
     Typography
 } from "@mui/material";
 
+function isOrderCancellable(status) {
+    if (!status) return false;
+    const s = String(status).toUpperCase().trim();
+    const nonCancellable = [
+        "DELIVERED",
+        "SHIPPED",
+        "DISPATCHED",
+        "CANCELLED",
+        "PACKED",
+        "OUT_FOR_DELIVERY",
+        "COMPLETED"
+    ];
+    return !nonCancellable.includes(s);
+}
+
 export default function Orders() {
 
     const [orders, setOrders] = useState([]);
@@ -38,7 +53,15 @@ export default function Orders() {
             const data =
                 await orderService.getOrders();
 
-            setOrders(data);
+            const sortedOrders = Array.isArray(data)
+                ? [...data].sort((a, b) => {
+                    const dateDiff = new Date(b.orderDate || 0) - new Date(a.orderDate || 0);
+                    if (dateDiff !== 0) return dateDiff;
+                    return (b.orderId || 0) - (a.orderId || 0);
+                })
+                : [];
+
+            setOrders(sortedOrders);
 
         }
 
@@ -315,19 +338,19 @@ export default function Orders() {
                                         </Typography>
 
                                         {
-                                            order.orderStatus !== "CANCELLED" &&
-
-                                            <Button
-                                                color="error"
-                                                variant="outlined"
-                                                onClick={() =>
-                                                    cancelOrder(
-                                                        order.orderId
-                                                    )
-                                                }
-                                            >
-                                                Cancel Order
-                                            </Button>
+                                            isOrderCancellable(order.orderStatus) && (
+                                                <Button
+                                                    color="error"
+                                                    variant="outlined"
+                                                    onClick={() =>
+                                                        cancelOrder(
+                                                            order.orderId
+                                                        )
+                                                    }
+                                                >
+                                                    Cancel Order
+                                                </Button>
+                                            )
                                         }
 
                                     </Stack>
@@ -335,7 +358,7 @@ export default function Orders() {
 
                                 {/* Right Side: Live Order Tracking Timeline (55% width) */}
                                 <Box sx={{ width: "100%" }}>
-                                    <OrderTrackingTimeline orderId={order.orderId} />
+                                    <OrderTrackingTimeline orderId={order.orderId} orderStatus={order.orderStatus} />
                                 </Box>
                             </Box>
 

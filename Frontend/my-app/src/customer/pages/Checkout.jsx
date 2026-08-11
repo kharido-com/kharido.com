@@ -101,44 +101,44 @@ export default function Checkout() {
 
     async function placeOrder() {
 
-    if (!selectedAddress) {
+        if (!selectedAddress) {
 
-        setMessage(
-            "Please select an address."
-        );
-
-        return;
-    }
-
-    try {
-
-        setPlacingOrder(true);
-
-        const order =
-            await orderService.placeOrder(
-                selectedAddress
+            setMessage(
+                "Please select an address."
             );
 
-        navigate(
-            `/user/payment/${order.orderId}`,
-            {
-                state: {
-                    order
-                }
-            }
-        );
+            return;
+        }
 
-    }
+        try {
+
+            setPlacingOrder(true);
+
+            const order =
+                await orderService.placeOrder(
+                    selectedAddress
+                );
+
+            navigate(
+                `/user/payment/${order.orderId}`,
+                {
+                    state: {
+                        order
+                    }
+                }
+            );
+
+        }
 
         catch (error) {
             console.error(error);
-                setMessage(
-                    "Unable to place order."
-                );
-            }
-            finally {
-                setPlacingOrder(false);
-            }
+            setMessage(
+                "Unable to place order."
+            );
+        }
+        finally {
+            setPlacingOrder(false);
+        }
 
     }
 
@@ -160,7 +160,7 @@ export default function Checkout() {
 
     }
 
-        return (
+    return (
 
         <Box
             sx={{

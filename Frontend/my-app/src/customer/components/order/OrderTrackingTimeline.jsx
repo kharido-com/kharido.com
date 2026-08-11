@@ -24,7 +24,21 @@ const STAGES = [
     { key: "DELIVERED", label: "Delivered" }
 ];
 
-export default function OrderTrackingTimeline({ orderId }) {
+function getStageIndexFromStatus(statusStr) {
+    if (!statusStr) return -1;
+    const s = String(statusStr).toUpperCase().trim();
+    if (s === "PLACED" || s === "ORDER_PLACED" || s === "PENDING_PAYMENT") return 0;
+    if (s === "PAID" || s === "PAYMENT_SUCCESSFUL" || s === "PAYMENT_SUCCESS") return 1;
+    if (s === "ACCEPTED" || s === "SELLER_ACCEPTED" || s === "APPROVED" || s === "PROCESSING") return 2;
+    if (s === "PACKED") return 3;
+    if (s === "DISPATCHED" || s === "SHIPPED" || s === "IN_TRANSIT") return 4;
+    if (s === "WAREHOUSE" || s === "WAREHOUSE_RECEIVED" || s === "REACHED_WAREHOUSE") return 5;
+    if (s === "OUT_FOR_DELIVERY") return 6;
+    if (s === "DELIVERED" || s === "COMPLETED") return 7;
+    return -1;
+}
+
+export default function OrderTrackingTimeline({ orderId, orderStatus }) {
     const [trackingEvents, setTrackingEvents] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -58,14 +72,21 @@ export default function OrderTrackingTimeline({ orderId }) {
     const eventMap = {};
     trackingEvents.forEach((ev) => {
         if (ev && ev.status) {
-            eventMap[ev.status.toUpperCase()] = ev;
+            const raw = ev.status.toUpperCase();
+            eventMap[raw] = ev;
+            const normIdx = getStageIndexFromStatus(raw);
+            if (normIdx >= 0 && normIdx < STAGES.length) {
+                eventMap[STAGES[normIdx].key] = ev;
+            }
         }
     });
+
+    const orderStatusIdx = getStageIndexFromStatus(orderStatus);
 
     // Find highest completed stage index
     let highestCompletedIndex = -1;
     STAGES.forEach((stage, idx) => {
-        if (eventMap[stage.key]) {
+        if (eventMap[stage.key] || idx <= orderStatusIdx) {
             highestCompletedIndex = idx;
         }
     });
@@ -116,7 +137,7 @@ export default function OrderTrackingTimeline({ orderId }) {
             <Box sx={{ position: "relative", pl: 0.5 }}>
                 {STAGES.map((stage, index) => {
                     const record = eventMap[stage.key];
-                    const isCompleted = record !== undefined;
+                    const isCompleted = record !== undefined || index <= orderStatusIdx;
                     const isCurrent = index === highestCompletedIndex;
 
                     let icon;

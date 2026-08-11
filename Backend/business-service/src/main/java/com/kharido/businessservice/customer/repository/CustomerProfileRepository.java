@@ -12,4 +12,7 @@ public interface CustomerProfileRepository
 
     Optional<CustomerProfile> findByUser(User user);
 
+    Optional<CustomerProfile> findByPhone(String phone);
+
+    boolean existsByPhoneAndCustomerIdNot(String phone, Integer customerId);
 }

@@ -3,9 +3,10 @@ import laptopImg from "../../assets/laptop.jpg";
 import mobileImg from "../../assets/mobile.jpg";
 import headphoneImg from "../../assets/headphone.jpg";
 
-const PRODUCT_API = "http://localhost:8082/api/products";
-const CATEGORY_API = "http://localhost:8082/api/categories";
-const BRAND_API = "http://localhost:8082/api/brands";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const PRODUCT_API = `${BASE_URL}/api/products`;
+const CATEGORY_API = `${BASE_URL}/api/categories`;
+const BRAND_API = `${BASE_URL}/api/brands`;
 
 export const DEFAULT_CATEGORIES = [
     { categoryId: 1, categoryName: "Electronics" },
@@ -147,7 +148,7 @@ export const getProducts = async (params = {}) => {
     if (params.categoryId) {
         filtered = filtered.filter(
             p => String(p.categoryId) === String(params.categoryId) ||
-                 String(p.category).toLowerCase() === String(params.categoryName || "").toLowerCase()
+                String(p.category).toLowerCase() === String(params.categoryName || "").toLowerCase()
         );
     }
 
@@ -155,8 +156,8 @@ export const getProducts = async (params = {}) => {
         const kw = params.keyword.toLowerCase();
         filtered = filtered.filter(
             p => p.productName.toLowerCase().includes(kw) ||
-                 (p.category && p.category.toLowerCase().includes(kw)) ||
-                 (p.brand && p.brand.toLowerCase().includes(kw))
+                (p.category && p.category.toLowerCase().includes(kw)) ||
+                (p.brand && p.brand.toLowerCase().includes(kw))
         );
     }
 

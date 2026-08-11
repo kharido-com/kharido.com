@@ -5,7 +5,7 @@ import com.kharido.businessservice.customer.product.Product;
 import jakarta.persistence.*;
 import lombok.Data;
 
-@Entity
+@Entity(name = "CustomerProductImage")
 @Table(name = "product_images")
 @Data
 public class ProductImage {

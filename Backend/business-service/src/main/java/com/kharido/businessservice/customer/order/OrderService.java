@@ -26,4 +26,6 @@ public interface OrderService {
     List<OrderTrackingResponse> getTracking(Integer orderId);
 
     OrderTrackingResponse addTrackingEvent(Integer orderId, UpdateTrackingRequest request);
+
+    String updateOrderStatus(Integer orderId, String status);
 }

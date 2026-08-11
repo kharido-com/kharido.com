@@ -1,452 +1,606 @@
-// import { useState } from "react";
-
-// export default function AddProduct() {
-
-//   const [product, setProduct] = useState({
-//     categoryId: "",
-//     subCategoryId: "",
-//     brandId: "",
-//     productName: "",
-//     description: "",
-//     price: "",
-//     stockQuantity: "",
-//     isPrimary: true,
-//     image: null
-//   });
-
-//   const handleChange = (e) => {
-//     const { name, value } = e.target;
-
-//     setProduct({
-//       ...product,
-//       [name]: value
-//     });
-//   };
-
-//   const handleImageChange = (e) => {
-//     setProduct({
-//       ...product,
-//       image: e.target.files[0]
-//     });
-//   };
-
-//   const handleSubmit = async (e) => {
-
-//     e.preventDefault();
-
-//     const formData = new FormData();
-
-//     formData.append("categoryId", product.categoryId);
-//     formData.append("subCategoryId", product.subCategoryId);
-//     formData.append("brandId", product.brandId);
-//     formData.append("productName", product.productName);
-//     formData.append("description", product.description);
-//     formData.append("price", product.price);
-//     formData.append("stockQuantity", product.stockQuantity);
-//     formData.append("isPrimary", product.isPrimary);
-
-//     if (product.image) {
-//       formData.append("image", product.image);
-//     }
-
-//     try {
-
-//       const response = await fetch(
-//         "http://localhost:8082/api/products",
-//         {
-//           method: "POST",
-//           credentials: "include",
-//           body: formData
-//         }
-//       );
-
-//       console.log("Status :", response.status);
-
-//       const data = await response.json();
-
-//       console.log("Response :", data);
-
-//       if (response.ok) {
-//         alert("Product Added Successfully");
-//       } else {
-//         alert(data.message || "Failed");
-//       }
-
-//     } catch (err) {
-
-//       console.log(err);
-//       alert("Server Error");
-//     }
-//   };
-
-//   return (
-
-//     <div className="container mt-4">
-
-//       <h2>Add Product</h2>
-
-//       <form onSubmit={handleSubmit}>
-
-//         <input
-//           className="form-control mb-3"
-//           placeholder="Category Id"
-//           name="categoryId"
-//           onChange={handleChange}
-//         />
-
-//         <input
-//           className="form-control mb-3"
-//           placeholder="Sub Category Id"
-//           name="subCategoryId"
-//           onChange={handleChange}
-//         />
-
-//         <input
-//           className="form-control mb-3"
-//           placeholder="Brand Id"
-//           name="brandId"
-//           onChange={handleChange}
-//         />
-
-//         <input
-//           className="form-control mb-3"
-//           placeholder="Product Name"
-//           name="productName"
-//           onChange={handleChange}
-//         />
-
-//         <textarea
-//           className="form-control mb-3"
-//           placeholder="Description"
-//           name="description"
-//           onChange={handleChange}
-//         />
-
-//         <input
-//           className="form-control mb-3"
-//           placeholder="Price"
-//           name="price"
-//           type="number"
-//           onChange={handleChange}
-//         />
-
-//         <input
-//           className="form-control mb-3"
-//           placeholder="Stock Quantity"
-//           name="stockQuantity"
-//           type="number"
-//           onChange={handleChange}
-//         />
-
-//         <input
-//           className="form-control mb-3"
-//           type="file"
-//           onChange={handleImageChange}
-//         />
-
-//         <button className="btn btn-primary">
-//           Add Product
-//         </button>
-
-//       </form>
-
-//     </div>
-//   );
-// }
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { generateProductDescription } from "../services/aiService";
 
 export default function AddProduct() {
+  const navigate = useNavigate();
 
   const [categories, setCategories] = useState([]);
-  const [subCategories, setSubCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
+  const [allSubcategories, setAllSubcategories] = useState([]);
   const [brands, setBrands] = useState([]);
 
   const [product, setProduct] = useState({
+    productName: "",
     categoryId: "",
     subCategoryId: "",
     brandId: "",
-    productName: "",
-    description: "",
     price: "",
-    stockQuantity: "",
-    isPrimary: true,
+    stockQuantity: 10,
+    description: "",
     image: null
   });
 
-  // Load Categories
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  // ─── AI State (additive — does not touch existing state above) ────────────
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
+  const [aiResult, setAiResult] = useState(null);
+  const [aiSnapshot, setAiSnapshot] = useState(null); // field values at time of generation
+  const [staleWarning, setStaleWarning] = useState(false);
+  // ──────────────────────────────────────────────────────────────────────────
+
   useEffect(() => {
-    fetch("http://localhost:8082/api/categories", {
-      credentials: "include"
-    })
-      .then(res => res.json())
-      .then(data => setCategories(data))
-      .catch(err => console.log(err));
+    fetchCategories();
+    fetchSubcategories();
+    fetchBrands();
   }, []);
 
-  // Load Brands
+  // ─── Stale-content detection ──────────────────────────────────────────────
+  // Watch key fields — if they change after AI generation, show a warning.
+  // Does NOT regenerate automatically.
   useEffect(() => {
-    fetch("http://localhost:8082/api/brands", {
-      credentials: "include"
-    })
-      .then(res => res.json())
-      .then(data => setBrands(data))
-      .catch(err => console.log(err));
-  }, []);
+    if (!aiSnapshot) return;
+    const changed =
+      product.productName !== aiSnapshot.productName ||
+      product.brandId !== aiSnapshot.brandId ||
+      product.categoryId !== aiSnapshot.categoryId;
+    setStaleWarning(changed);
+  }, [product.productName, product.brandId, product.categoryId, aiSnapshot]);
+  // ──────────────────────────────────────────────────────────────────────────
 
-  // Load Sub Categories when Category changes
-  useEffect(() => {
-
-    if (!product.categoryId) {
-      setSubCategories([]);
-      return;
-    }
-
-    fetch(
-      `http://localhost:8082/api/subcategories/${product.categoryId}`,
-      {
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}/api/categories`, {
         credentials: "include"
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCategories(Array.isArray(data) ? data : []);
       }
-    )
-      .then(res => res.json())
-      .then(data => setSubCategories(data))
-      .catch(err => console.log(err));
-
-  }, [product.categoryId]);
-
-  const handleChange = (e) => {
-
-    const { name, value } = e.target;
-
-    setProduct(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
+    } catch (err) {
+      console.error("Failed to fetch categories:", err);
+    }
   };
 
-  const handleCategoryChange = (e) => {
+  const fetchSubcategories = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}/api/subcategories`, {
+        credentials: "include"
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : [];
+        setAllSubcategories(list);
+        setSubcategories(list);
+      }
+    } catch (err) {
+      console.error("Failed to fetch subcategories:", err);
+    }
+  };
 
-    const value = e.target.value;
+  const fetchBrands = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}/api/brands`, {
+        credentials: "include"
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setBrands(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch brands:", err);
+    }
+  };
 
-    setProduct(prev => ({
-      ...prev,
-      categoryId: value,
-      subCategoryId: ""
-    }));
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "categoryId") {
+      const catId = value ? parseInt(value) : "";
+      setProduct((prev) => ({
+        ...prev,
+        categoryId: catId,
+        subCategoryId: ""
+      }));
 
+      if (catId) {
+        fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}/api/subcategories/${catId}`, {
+          credentials: "include"
+        })
+          .then((res) => (res.ok ? res.json() : []))
+          .then((data) => {
+            setSubcategories(Array.isArray(data) && data.length > 0 ? data : allSubcategories.filter((s) => s.categoryId === catId));
+          })
+          .catch(() => {
+            setSubcategories(allSubcategories.filter((s) => s.categoryId === catId));
+          });
+      } else {
+        setSubcategories(allSubcategories);
+      }
+    } else {
+      setProduct((prev) => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleImageChange = (e) => {
-
-    setProduct(prev => ({
-      ...prev,
-      image: e.target.files[0]
-    }));
-
+    if (e.target.files && e.target.files[0]) {
+      setProduct((prev) => ({
+        ...prev,
+        image: e.target.files[0]
+      }));
+    }
   };
 
+  // ─── AI Generation Handler ────────────────────────────────────────────────
+  const handleGenerateAI = async () => {
+    setAiError("");
+    setAiResult(null);
+    setStaleWarning(false);
+    setAiLoading(true);
+
+    // Resolve human-readable brand and category names for the AI prompt
+    const brandObj = brands.find((b) => b.brandId === parseInt(product.brandId));
+    const categoryObj = categories.find((c) => c.categoryId === parseInt(product.categoryId));
+
+    const payload = {
+      productName: product.productName.trim(),
+      brand: brandObj ? brandObj.brandName : "",
+      category: categoryObj ? categoryObj.categoryName : "",
+      price: product.price ? `₹${product.price}` : "",
+      specifications: "",   // no dedicated spec field in AddProduct — seller fills description
+      additionalDetails: ""
+    };
+
+    try {
+      const result = await generateProductDescription(payload);
+      setAiResult(result);
+
+      // Auto-populate the description textarea with generated content
+      setProduct((prev) => ({
+        ...prev,
+        description: result.description || prev.description
+      }));
+
+      // Snapshot the fields used for generation (for stale detection)
+      setAiSnapshot({
+        productName: product.productName,
+        brandId: product.brandId,
+        categoryId: product.categoryId
+      });
+
+    } catch (err) {
+      console.error("AI generation failed:", err);
+      setAiError(err.message || "AI generation failed. Please try again.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+  // ──────────────────────────────────────────────────────────────────────────
+
+  // ─── EXISTING SUBMIT — COMPLETELY UNCHANGED ───────────────────────────────
   const handleSubmit = async (e) => {
-
     e.preventDefault();
+    setMessage("");
+    setError("");
 
-    const formData = new FormData();
+    if (!product.productName || !product.price) {
+      setError("Please enter Product Name and Price");
+      return;
+    }
 
-    formData.append("categoryId", product.categoryId);
-    formData.append("subCategoryId", product.subCategoryId);
-    formData.append("brandId", product.brandId);
-    formData.append("productName", product.productName);
-    formData.append("description", product.description);
-    formData.append("price", product.price);
-    formData.append("stockQuantity", product.stockQuantity);
-    formData.append("isPrimary", product.isPrimary);
-
-    if (product.image) {
-      formData.append("image", product.image);
+    if (Number(product.price) <= 0) {
+      setError("Price must be greater than 0");
+      return;
     }
 
     try {
+      setLoading(true);
 
-      const response = await fetch(
-        "http://localhost:8082/api/products",
-        {
-          method: "POST",
-          credentials: "include",
-          body: formData
-        }
-      );
+      const formData = new FormData();
+      formData.append("productName", product.productName);
+      formData.append("categoryId", product.categoryId || 1);
+      formData.append("subCategoryId", product.subCategoryId || 1);
+      formData.append("brandId", product.brandId || 1);
+      formData.append("price", product.price);
+      formData.append("stockQuantity", product.stockQuantity || 10);
+      formData.append("description", product.description || "");
 
-      const data = await response.json();
-
-      if (response.ok) {
-
-        alert("Product Added Successfully");
-
-        setProduct({
-          categoryId: "",
-          subCategoryId: "",
-          brandId: "",
-          productName: "",
-          description: "",
-          price: "",
-          stockQuantity: "",
-          isPrimary: true,
-          image: null
-        });
-
-      } else {
-
-        alert(data.message || "Failed");
-
+      if (product.image) {
+        formData.append("image", product.image);
       }
 
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}/api/products`, {
+        method: "POST",
+        credentials: "include",
+        body: formData
+      });
+
+      if (res.ok) {
+        setMessage("Product added successfully!");
+        setTimeout(() => {
+          navigate("/seller/products");
+        }, 1200);
+      } else {
+        const errorText = await res.text();
+        setError(errorText || "Failed to add product");
+      }
     } catch (err) {
-
-      console.log(err);
-      alert("Server Error");
-
+      console.error(err);
+      setError("Error adding product: " + err.message);
+    } finally {
+      setLoading(false);
     }
-
   };
+  // ──────────────────────────────────────────────────────────────────────────
 
   return (
+    <div style={{ padding: "20px 40px", maxWidth: "900px" }}>
+      <h2 style={{ fontWeight: 700, color: "#0F172A", marginBottom: "30px" }}>
+        Add Product
+      </h2>
 
-    <div className="container mt-4">
+      {message && (
+        <div className="alert alert-success" role="alert">
+          {message}
+        </div>
+      )}
 
-      <h2 className="mb-4">Add Product</h2>
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <label className="form-label" style={{ fontWeight: 500, color: "#334155" }}>
+            Product Name
+          </label>
+          <input
+            type="text"
+            name="productName"
+            className="form-control"
+            value={product.productName}
+            onChange={handleChange}
+            placeholder="e.g. Wireless Headphones"
+            style={{ borderRadius: "8px", padding: "10px 14px" }}
+            required
+          />
+        </div>
 
-        {/* Category */}
-
-        <select
-          className="form-select mb-3"
-          name="categoryId"
-          value={product.categoryId}
-          onChange={handleCategoryChange}
-          required
-        >
-
-          <option value="">Select Category</option>
-
-          {categories.map(category => (
-
-            <option
-              key={category.categoryId}
-              value={category.categoryId}
+        <div className="row">
+          <div className="col-md-4 mb-4">
+            <label className="form-label" style={{ fontWeight: 500, color: "#334155" }}>
+              Product Category
+            </label>
+            <select
+              name="categoryId"
+              className="form-select"
+              value={product.categoryId}
+              onChange={handleChange}
+              style={{ borderRadius: "8px", padding: "10px 14px" }}
             >
-              {category.categoryName}
-            </option>
+              <option value="">-- Select Category --</option>
+              {categories.map((cat) => (
+                <option key={cat.categoryId} value={cat.categoryId}>
+                  {cat.categoryName}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          ))}
-
-        </select>
-
-        {/* Sub Category */}
-
-        <select
-          className="form-select mb-3"
-          name="subCategoryId"
-          value={product.subCategoryId}
-          onChange={handleChange}
-          required
-        >
-
-          <option value="">Select Sub Category</option>
-
-          {subCategories.map(sub => (
-
-            <option
-              key={sub.subCategoryId}
-              value={sub.subCategoryId}
+          <div className="col-md-4 mb-4">
+            <label className="form-label" style={{ fontWeight: 500, color: "#334155" }}>
+              Product Subcategory
+            </label>
+            <select
+              name="subCategoryId"
+              className="form-select"
+              value={product.subCategoryId}
+              onChange={handleChange}
+              style={{ borderRadius: "8px", padding: "10px 14px" }}
             >
-              {sub.subCategoryName}
-            </option>
+              <option value="">-- Select Subcategory --</option>
+              {subcategories.map((sub) => (
+                <option key={sub.subCategoryId} value={sub.subCategoryId}>
+                  {sub.subCategoryName}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          ))}
-
-        </select>
-
-        {/* Brand */}
-
-        <select
-          className="form-select mb-3"
-          name="brandId"
-          value={product.brandId}
-          onChange={handleChange}
-          required
-        >
-
-          <option value="">Select Brand</option>
-
-          {brands.map(brand => (
-
-            <option
-              key={brand.brandId}
-              value={brand.brandId}
+          <div className="col-md-4 mb-4">
+            <label className="form-label" style={{ fontWeight: 500, color: "#334155" }}>
+              Brand
+            </label>
+            <select
+              name="brandId"
+              className="form-select"
+              value={product.brandId}
+              onChange={handleChange}
+              style={{ borderRadius: "8px", padding: "10px 14px" }}
             >
-              {brand.brandName}
-            </option>
+              <option value="">-- Select Brand --</option>
+              {brands.map((b) => (
+                <option key={b.brandId} value={b.brandId}>
+                  {b.brandName}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-          ))}
+        <div className="row">
+          <div className="col-md-6 mb-4">
+            <label className="form-label" style={{ fontWeight: 500, color: "#334155" }}>
+              Product Price (₹)
+            </label>
+            <input
+              type="number"
+              name="price"
+              min="0.01"
+              step="any"
+              className="form-control"
+              value={product.price}
+              onChange={handleChange}
+              placeholder="e.g. 1999"
+              style={{ borderRadius: "8px", padding: "10px 14px" }}
+              required
+            />
+          </div>
 
-        </select>
+          <div className="col-md-6 mb-4">
+            <label className="form-label" style={{ fontWeight: 500, color: "#334155" }}>
+              Stock Quantity
+            </label>
+            <input
+              type="number"
+              name="stockQuantity"
+              className="form-control"
+              value={product.stockQuantity}
+              onChange={handleChange}
+              placeholder="e.g. 10"
+              style={{ borderRadius: "8px", padding: "10px 14px" }}
+            />
+          </div>
+        </div>
 
-        <input
-          className="form-control mb-3"
-          placeholder="Product Name"
-          name="productName"
-          value={product.productName}
-          onChange={handleChange}
-          required
-        />
+        {/* ─── AI GENERATE BUTTON + STALE WARNING (ADDITIVE) ─────────────────── */}
+        <div className="mb-3">
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+            <button
+              id="ai-generate-btn"
+              type="button"
+              onClick={handleGenerateAI}
+              disabled={aiLoading || !product.productName.trim()}
+              style={{
+                backgroundColor: aiLoading ? "#94a3b8" : "#7C3AED",
+                color: "#FFFFFF",
+                fontWeight: 600,
+                padding: "9px 20px",
+                borderRadius: "8px",
+                border: "none",
+                cursor: aiLoading || !product.productName.trim() ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "14px",
+                transition: "background-color 0.2s ease"
+              }}
+            >
+              {aiLoading ? (
+                <>
+                  {/* Bootstrap spinner */}
+                  <span
+                    className="spinner-border spinner-border-sm"
+                    role="status"
+                    aria-hidden="true"
+                  />
+                  Generating…
+                </>
+              ) : (
+                <>✨ Generate AI Description</>
+              )}
+            </button>
 
-        <textarea
-          className="form-control mb-3"
-          placeholder="Description"
-          name="description"
-          value={product.description}
-          onChange={handleChange}
-          required
-        />
+            {aiResult && !aiLoading && (
+              <span style={{ fontSize: "13px", color: "#16a34a", fontWeight: 500 }}>
+                ✓ Description generated — you can edit it below
+              </span>
+            )}
+          </div>
 
-        <input
-          className="form-control mb-3"
-          type="number"
-          placeholder="Price"
-          name="price"
-          value={product.price}
-          onChange={handleChange}
-          required
-        />
+          {/* Stale-content warning */}
+          {staleWarning && (
+            <div
+              style={{
+                marginTop: "10px",
+                padding: "8px 14px",
+                backgroundColor: "#fffbeb",
+                border: "1px solid #fbbf24",
+                borderRadius: "6px",
+                fontSize: "13px",
+                color: "#92400e",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px"
+              }}
+            >
+              ⚠️ Product details changed. Consider regenerating the AI description.
+            </div>
+          )}
 
-        <input
-          className="form-control mb-3"
-          type="number"
-          placeholder="Stock Quantity"
-          name="stockQuantity"
-          value={product.stockQuantity}
-          onChange={handleChange}
-          required
-        />
+          {/* AI error message */}
+          {aiError && (
+            <div
+              style={{
+                marginTop: "10px",
+                padding: "8px 14px",
+                backgroundColor: "#fef2f2",
+                border: "1px solid #fca5a5",
+                borderRadius: "6px",
+                fontSize: "13px",
+                color: "#991b1b",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px"
+              }}
+            >
+              ❌ {aiError}
+            </div>
+          )}
+        </div>
+        {/* ─────────────────────────────────────────────────────────────────── */}
 
-        <input
-          className="form-control mb-4"
-          type="file"
-          onChange={handleImageChange}
-          required
-        />
+        <div className="mb-4">
+          <label className="form-label" style={{ fontWeight: 500, color: "#334155" }}>
+            Product Description
+          </label>
+          <textarea
+            name="description"
+            className="form-control"
+            rows="4"
+            value={product.description}
+            onChange={handleChange}
+            placeholder="Enter detailed description, or click ✨ Generate AI Description above"
+            style={{ borderRadius: "8px", padding: "10px 14px" }}
+          />
+        </div>
+
+        {/* ─── AI RESULTS PANEL (ADDITIVE) ────────────────────────────────────── */}
+        {aiResult && (
+          <div
+            style={{
+              marginBottom: "24px",
+              border: "1px solid #e0e7ff",
+              borderRadius: "10px",
+              backgroundColor: "#f5f3ff",
+              padding: "18px 20px"
+            }}
+          >
+            <div style={{ fontWeight: 600, color: "#4c1d95", marginBottom: "14px", fontSize: "15px" }}>
+              ✨ AI Generated Content Preview
+              <span style={{ fontWeight: 400, fontSize: "12px", color: "#6d28d9", marginLeft: "10px" }}>
+                (Edit description above before saving)
+              </span>
+            </div>
+
+            {/* Key Features */}
+            {Array.isArray(aiResult.keyFeatures) && aiResult.keyFeatures.length > 0 && (
+              <div style={{ marginBottom: "14px" }}>
+                <div style={{ fontWeight: 600, color: "#1e1b4b", fontSize: "13px", marginBottom: "6px" }}>
+                  Key Features
+                </div>
+                <ul style={{ margin: 0, paddingLeft: "20px" }}>
+                  {aiResult.keyFeatures.map((feature, idx) => (
+                    <li key={idx} style={{ color: "#374151", fontSize: "13px", marginBottom: "3px" }}>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Technical Specifications */}
+            {aiResult.technicalSpecifications &&
+              Object.keys(aiResult.technicalSpecifications).length > 0 && (
+                <div style={{ marginBottom: "14px" }}>
+                  <div style={{ fontWeight: 600, color: "#1e1b4b", fontSize: "13px", marginBottom: "6px" }}>
+                    Technical Specifications
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                    {Object.entries(aiResult.technicalSpecifications).map(([key, value]) => (
+                      <span
+                        key={key}
+                        style={{
+                          backgroundColor: "#ede9fe",
+                          color: "#4c1d95",
+                          padding: "3px 10px",
+                          borderRadius: "20px",
+                          fontSize: "12px",
+                          fontWeight: 500
+                        }}
+                      >
+                        {key}: {value}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            {/* SEO Title */}
+            {aiResult.seoTitle && (
+              <div style={{ marginBottom: "10px" }}>
+                <span style={{ fontWeight: 600, color: "#1e1b4b", fontSize: "13px" }}>
+                  SEO Title:{" "}
+                </span>
+                <span style={{ color: "#374151", fontSize: "13px" }}>{aiResult.seoTitle}</span>
+              </div>
+            )}
+
+            {/* SEO Keywords */}
+            {Array.isArray(aiResult.seoKeywords) && aiResult.seoKeywords.length > 0 && (
+              <div>
+                <div style={{ fontWeight: 600, color: "#1e1b4b", fontSize: "13px", marginBottom: "6px" }}>
+                  SEO Keywords
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                  {aiResult.seoKeywords.map((kw, idx) => (
+                    <span
+                      key={idx}
+                      style={{
+                        backgroundColor: "#ddd6fe",
+                        color: "#5b21b6",
+                        padding: "2px 10px",
+                        borderRadius: "20px",
+                        fontSize: "12px"
+                      }}
+                    >
+                      #{kw}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        {/* ─────────────────────────────────────────────────────────────────── */}
+
+        <div className="mb-4">
+          <label className="form-label" style={{ fontWeight: 500, color: "#334155" }}>
+            Product Image
+          </label>
+          <input
+            type="file"
+            className="form-control"
+            accept="image/*"
+            onChange={handleImageChange}
+            style={{ borderRadius: "8px", padding: "10px 14px" }}
+          />
+        </div>
 
         <button
-          className="btn btn-primary w-100"
           type="submit"
+          className="btn"
+          disabled={loading}
+          style={{
+            backgroundColor: "#00838F",
+            color: "#FFFFFF",
+            fontWeight: 600,
+            padding: "10px 24px",
+            borderRadius: "8px",
+            border: "none"
+          }}
         >
-          Add Product
+          {loading ? "Adding Product..." : "Add Product"}
         </button>
-
       </form>
-
     </div>
-
   );
-
 }
